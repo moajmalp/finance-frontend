@@ -336,7 +336,7 @@ const SettingsPage = () => {
                         </div>
                         <div className="flex items-center gap-2 group/version">
                             <div className="h-2 w-2 rounded-full bg-emerald-theme animate-pulse" />
-                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] opacity-40 group-hover:opacity-80 transition-opacity">Antigravity Core v4.2.0</p>
+                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] opacity-40 group-hover:opacity-80 transition-opacity">AJ Finance Core v4.2.0</p>
                         </div>
                     </div>
                 </Card>

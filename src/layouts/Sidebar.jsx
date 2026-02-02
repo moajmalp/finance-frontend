@@ -39,12 +39,10 @@ const Sidebar = ({ activeTab, setActiveTab, onOpenNotifications, unreadNotificat
                     className="flex items-center gap-3 cursor-pointer group/logo"
                     onClick={() => setIsCollapsed(!isCollapsed)}
                 >
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary text-white shadow-[0_0_20px_rgba(168,85,247,0.4)] group-hover/logo:scale-110 transition-transform">
-                        <span className="text-xl font-bold italic tracking-tighter">AG</span>
-                    </div>
+                    <img src="/favicon.svg" alt="AJ Finance Logo" className="h-11 w-11 shrink-0 shadow-[0_0_20px_rgba(168,85,247,0.4)] group-hover/logo:scale-110 transition-transform duration-300 rounded-2xl" />
                     {!isCollapsed && (
                         <div className="animate-in fade-in slide-in-from-left-2 duration-300">
-                            <h1 className="text-xl font-black text-gradient tracking-tight">Antigravity</h1>
+                            <h1 className="text-xl font-black text-gradient tracking-tight">AJ Finance</h1>
                             <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mt-1 opacity-80">Syncing Flux</p>
                         </div>
                     )}

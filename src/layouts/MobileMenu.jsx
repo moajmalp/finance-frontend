@@ -48,11 +48,9 @@ const MobileMenu = ({ isOpen, onClose, activeTab, setActiveTab }) => {
                     >
                         <div className="flex items-center justify-between mb-10">
                             <div className="flex items-center gap-3">
-                                <div className="h-10 w-10 rounded-2xl bg-primary flex items-center justify-center text-white shadow-glow">
-                                    <span className="font-black italic">AG</span>
-                                </div>
+                                <img src="/favicon.svg" alt="AJ Finance Logo" className="h-10 w-10 rounded-2xl shadow-glow" />
                                 <div>
-                                    <h2 className="text-lg font-black text-foreground tracking-tight">Antigravity</h2>
+                                    <h2 className="text-lg font-black text-foreground tracking-tight">AJ Finance</h2>
                                     <p className="text-[9px] font-black text-primary uppercase tracking-widest">Mobile Sync</p>
                                 </div>
                             </div>

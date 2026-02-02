@@ -385,7 +385,7 @@ export const TransactionProvider = ({ children }) => {
             setAuthData(prev => ({
                 ...prev,
                 isAuthenticated: true,
-                user: prev.user || { id: 'u_1', name: 'Alara Vance', email: 'alara@finance.os' }
+                user: prev.user || { id: 'u_1', name: 'Ajmal', email: 'ajmal@finance.os' }
             }))
             return true
         }
