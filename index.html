@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en" class="dark">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#4f46e5" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="My Finance" />
+  <link rel="manifest" href="/manifest.json" />
+  <title>Finance - Personal Management</title>
+</head>
+
+<body class="antialiased">
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        navigator.serviceWorker.getRegistrations().then(function (registrations) {
+          for (let registration of registrations) {
+            registration.unregister();
+            console.log('Successfully unregistered stuck Service Worker on localhost');
+          }
+          if (window.caches) {
+            caches.keys().then(function (names) {
+              for (let name of names) caches.delete(name);
+            });
+          }
+          if (registrations.length > 0) window.location.reload();
+        });
+      } else {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW registration failed:', err));
+        });
+      }
+    }
+  </script>
+</body>
+
+</html>

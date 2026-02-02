@@ -1,0 +1,211 @@
+@import "tailwindcss";
+
+:root {
+  /* Clean & Airy Light Mode (Professional Banking Aesthetic) */
+  --background: #f8fafc;
+  --foreground: #000000;
+  --primary: #4338ca;
+  --primary-glow: rgba(67, 56, 202, 0.08);
+  --primary-foreground: #ffffff;
+
+  --card-bg: rgba(255, 255, 255, 0.8);
+  --card-border: rgba(67, 56, 202, 0.1);
+  --card-foreground: #000000;
+  --card-muted: #f1f5f9;
+
+
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --input: #ffffff;
+  --ring: #4338ca;
+
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+
+  --accent: #4338ca;
+  --accent-foreground: #ffffff;
+
+  /* Functional Colors - Light Mode */
+  --success: #059669;
+  --success-bg: rgba(5, 150, 105, 0.08);
+  --warning: #d97706;
+  --warning-bg: rgba(217, 119, 6, 0.08);
+  --error: #dc2626;
+  --error-bg: rgba(220, 38, 38, 0.08);
+
+  --shadow-premium: 0 20px 25px -5px rgba(0, 0, 0, 0.04), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+  --shadow-glow: 0 0 20px rgba(67, 56, 202, 0.1);
+
+  --mesh-gradient: radial-gradient(at 0% 0%, rgba(67, 56, 202, 0.05) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(5, 150, 105, 0.03) 0px, transparent 50%);
+}
+
+.dark {
+  /* Premium Twilight Glass Palette */
+  --background: #000000;
+  --foreground: #f8fafc;
+  --primary: #a855f7;
+  /* Electric Purple */
+  --primary-glow: rgba(168, 85, 247, 0.2);
+  --primary-foreground: #ffffff;
+
+  --card-bg: rgba(21, 0, 59, 0.4);
+  --card-border: rgba(255, 255, 255, 0.1);
+  --card-foreground: #f8fafc;
+  --card-muted: rgba(21, 0, 59, 0.2);
+
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.2);
+  --input: rgba(21, 0, 59, 0.3);
+  --ring: #a855f7;
+
+  --muted: rgba(255, 255, 255, 0.05);
+  --muted-foreground: #94a3b8;
+
+  --accent: #a855f7;
+  --accent-foreground: #ffffff;
+
+  /* Functional Colors - Dark Mode */
+  --success: #10b981;
+  --success-bg: rgba(16, 185, 129, 0.1);
+  --warning: #fbbf24;
+  --warning-bg: rgba(251, 191, 36, 0.1);
+  --error: #f87171;
+  --error-bg: rgba(248, 113, 113, 0.1);
+
+  --shadow-premium: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 18px 36px -18px rgba(21, 0, 59, 0.5);
+  --shadow-glow: 0 0 20px rgba(168, 85, 247, 0.4);
+
+  --mesh-gradient: linear-gradient(135deg, #15003b 0%, #000000 100%);
+}
+
+@theme {
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card-bg);
+  --color-card-foreground: var(--card-foreground);
+  --color-card-muted: var(--card-muted);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  /* Functional Colors */
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+  --color-success-bg: var(--success-bg);
+  --color-warning-bg: var(--warning-bg);
+  --color-error-bg: var(--error-bg);
+
+  /* Shadows */
+  --shadow-premium: var(--shadow-premium);
+  --shadow-glow: var(--shadow-glow);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+
+  ::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  /* Hide number input spinners */
+  input::-webkit-outer-spin-button,
+  input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    appearance: none;
+    margin: 0;
+  }
+
+  input[type=number] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased transition-colors duration-500 selection:bg-primary/20;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-image: var(--mesh-gradient);
+    background-attachment: fixed;
+  }
+}
+
+@layer utilities {
+  .glass-card {
+    @apply backdrop-blur-xl transition-all duration-500 border;
+    background: var(--card-bg);
+    border-color: var(--card-border);
+  }
+
+  .glass-card:hover {
+    @apply scale-[1.01] border-primary/20;
+    box-shadow: var(--shadow-glow);
+  }
+
+  .text-gradient {
+    @apply font-black text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-br dark:from-slate-300 dark:via-white dark:to-slate-400;
+  }
+
+
+
+  .glass {
+    @apply backdrop-blur-2xl border border-border/50 shadow-xl;
+    background: var(--card-bg);
+  }
+
+  .glass-premium {
+    @apply backdrop-blur-3xl border border-border/60 shadow-2xl;
+    background: var(--card-bg);
+  }
+
+  .scrollbar-none {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  /* Theme color helpers if needed elsewhere */
+  .text-indigo-theme {
+    color: var(--indigo);
+  }
+
+  .bg-indigo-theme {
+    background-color: var(--indigo-bg);
+  }
+
+  .text-emerald-theme {
+    color: var(--emerald);
+  }
+
+  .bg-emerald-theme {
+    background-color: var(--emerald-bg);
+  }
+
+  .text-rose-theme {
+    color: var(--rose);
+  }
+
+  .bg-rose-theme {
+    background-color: var(--rose-bg);
+  }
+
+  .text-amber-theme {
+    color: var(--amber);
+  }
+
+  .bg-amber-theme {
+    background-color: var(--amber-bg);
+  }
+}

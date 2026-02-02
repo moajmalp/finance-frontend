@@ -1,0 +1,278 @@
+import { useState, useMemo } from 'react'
+import { Wallet, Landmark, CreditCard, Banknote, Plus, ArrowRightLeft, TrendingUp, TrendingDown } from 'lucide-react'
+import Card from '../components/ui/Card'
+import Button from '../components/ui/Button'
+import { useTransactions } from '../context/TransactionContext'
+import { motion, AnimatePresence } from 'framer-motion'
+import { cn } from '../lib/utils'
+import Modal from '../components/ui/Modal'
+import Input from '../components/ui/Input'
+import Dropdown from '../components/ui/Dropdown'
+import Calendar from '../components/ui/Calendar'
+import PrivacyValue from '../components/ui/PrivacyValue'
+import ConfirmationModal from '../components/ui/ConfirmationModal'
+
+const Accounts = () => {
+    const { accounts, addTransfer, netWorthDelta, liabilities, addAccount, calculateBalance, currencySymbol } = useTransactions()
+
+    const [isTransferModalOpen, setIsTransferModalOpen] = useState(false)
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
+    const [confirmAction, setConfirmAction] = useState({ title: '', message: '', onConfirm: () => { } })
+    const [transferData, setTransferData] = useState({
+        fromId: '',
+        toId: '',
+        amount: '',
+        date: new Date().toISOString().split('T')[0]
+    })
+    const [newAccount, setNewAccount] = useState({
+        name: '',
+        type: 'bank',
+        initialBalance: '',
+        color: 'bg-indigo-500'
+    })
+
+    const getIcon = (type) => {
+        switch (type) {
+            case 'bank': return Landmark
+            case 'credit_card': return CreditCard
+            case 'cash': return Banknote
+            default: return Wallet
+        }
+    }
+
+    const handleTransfer = (e) => {
+        e.preventDefault()
+        if (!transferData.fromId || !transferData.toId || !transferData.amount) return
+
+        const fromName = accounts.find(a => a.id === transferData.fromId)?.name
+        const toName = accounts.find(a => a.id === transferData.toId)?.name
+
+        setConfirmAction({
+            title: 'Verify Transfer',
+            message: `Are you sure you want to transfer ${currencySymbol}${transferData.amount} from ${fromName} to ${toName}?`,
+            type: 'primary',
+            onConfirm: () => {
+                addTransfer(transferData.fromId, transferData.toId, parseFloat(transferData.amount), transferData.date)
+                setIsTransferModalOpen(false)
+                setTransferData({ fromId: '', toId: '', amount: '', date: new Date().toISOString().split('T')[0] })
+            }
+        })
+        setIsConfirmModalOpen(true)
+    }
+
+    const handleAddAccount = (e) => {
+        e.preventDefault()
+        if (!newAccount.name || !newAccount.initialBalance) return
+
+        setConfirmAction({
+            title: 'Confirm New Vault',
+            message: `Do you want to establish "${newAccount.name}" as a new financial vault with an initial balance of ${currencySymbol}${newAccount.initialBalance}?`,
+            type: 'primary',
+            onConfirm: () => {
+                addAccount(newAccount)
+                setIsAddModalOpen(false)
+                setNewAccount({ name: '', type: 'bank', initialBalance: '', color: 'bg-indigo-500' })
+            }
+        })
+        setIsConfirmModalOpen(true)
+    }
+
+    const totalNetWorth = useMemo(() =>
+        accounts.reduce((acc, curr) => acc + calculateBalance(curr.id), 0)
+        , [accounts, calculateBalance])
+
+    const colors = [
+        { name: 'Indigo', value: 'bg-indigo-500' },
+        { name: 'Emerald', value: 'bg-emerald-500' },
+        { name: 'Rose', value: 'bg-rose-500' },
+        { name: 'Amber', value: 'bg-amber-500' },
+        { name: 'Sky', value: 'bg-sky-500' },
+        { name: 'Violet', value: 'bg-violet-500' },
+    ]
+
+    return (
+        <div className="space-y-10 animate-in fade-in slide-in-from-bottom-5 duration-700 pb-10">
+            <div className="flex flex-col gap-6">
+                <div className="flex justify-between items-start">
+                    <div>
+                        <h2 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">Financial Vault</h2>
+                        <p className="text-xs sm:text-sm font-medium text-muted-foreground mt-1 leading-relaxed">Secure management of your capital assets</p>
+                    </div>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3">
+                    <Button onClick={() => setIsTransferModalOpen(true)} variant="outline" className="flex-1 h-14 rounded-2xl font-black text-[11px] uppercase tracking-widest gap-2 bg-card/50">
+                        <ArrowRightLeft size={18} />
+                        Transfer
+                    </Button>
+                    <Button onClick={() => setIsAddModalOpen(true)} className="flex-1 h-14 rounded-2xl font-black text-[11px] uppercase tracking-widest gap-2 shadow-xl shadow-primary/20">
+                        <Plus size={18} />
+                        New Vault
+                    </Button>
+                </div>
+            </div>
+
+            {/* Net Worth Summary */}
+            <Card className="bg-gradient-to-br from-primary to-indigo-600 text-white border-none relative overflow-hidden group shadow-2xl shadow-primary/30 p-8 sm:p-10 rounded-[3rem]">
+                <div className="absolute top-[-20%] right-[-10%] w-[60%] h-[150%] bg-white/10 rounded-full blur-[100px] group-hover:scale-125 transition-transform duration-[2000ms]" />
+                <div className="relative z-10">
+                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/60">Total Capital Balance</p>
+                    <h2 className="text-4xl sm:text-6xl font-black mt-4 tracking-tighter leading-tight flex items-baseline">
+                        <PrivacyValue>{currencySymbol}</PrivacyValue>
+                        <PrivacyValue>{totalNetWorth.toLocaleString(undefined, { minimumFractionDigits: 2 })}</PrivacyValue>
+                    </h2>
+
+                    <div className="grid grid-cols-2 gap-8 mt-10">
+                        <div className="space-y-2">
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50">Monthly Flow</p>
+                            <div className="flex items-center gap-2">
+                                <div className={cn("p-1.5 rounded-lg", netWorthDelta >= 0 ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300')}>
+                                    {netWorthDelta >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                                </div>
+                                <div className={cn("text-base font-black tracking-tight flex", netWorthDelta >= 0 ? 'text-emerald-300' : 'text-rose-300')}>
+                                    {netWorthDelta >= 0 ? '+' : '-'}
+                                    <PrivacyValue>{currencySymbol}</PrivacyValue>
+                                    <PrivacyValue>{Math.abs(netWorthDelta).toLocaleString()}</PrivacyValue>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50">Liability</p>
+                            <div className="flex items-center gap-2">
+                                <div className="p-1.5 bg-rose-500/20 text-rose-300 rounded-lg">
+                                    <TrendingDown size={14} />
+                                </div>
+                                <div className="text-base font-black text-rose-300 tracking-tight flex">
+                                    - <PrivacyValue>{currencySymbol}</PrivacyValue>
+                                    <PrivacyValue>{liabilities.toLocaleString()}</PrivacyValue>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </Card>
+
+            {/* Accounts Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <AnimatePresence mode="popLayout">
+                    {accounts.map((acc, i) => {
+                        const Icon = getIcon(acc.type)
+                        const balance = calculateBalance(acc.id)
+                        return (
+                            <motion.div
+                                key={acc.id}
+                                layout
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.9 }}
+                                transition={{ delay: i * 0.1 }}
+                            >
+                                <Card className="hover:shadow-premium hover:-translate-y-1.5 hover:scale-[1.01] transition-all duration-500 cursor-pointer group h-full flex flex-col border-border/40 dark:border-white/5">
+                                    <div className="flex items-start justify-between">
+                                        <div className={cn("p-4 rounded-2xl text-white shadow-lg group-hover:rotate-6 transition-transform duration-500", acc.color)}>
+                                            <Icon size={24} />
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{acc.type.replace('_', ' ')}</p>
+                                            <h3 className="text-lg font-black text-foreground mt-1">{acc.name}</h3>
+                                        </div>
+                                    </div>
+                                    <div className="mt-8 flex-1">
+                                        <p className="text-xs font-black text-muted-foreground uppercase tracking-widest font-bold">Available Balance</p>
+                                        <div className={cn("text-3xl font-black mt-2 tracking-tight flex items-baseline", balance < 0 ? 'text-rose-theme' : 'text-foreground')}>
+                                            <PrivacyValue>{currencySymbol}</PrivacyValue>
+                                            <PrivacyValue>{balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}</PrivacyValue>
+                                        </div>
+                                    </div>
+                                    <div className="mt-6 pt-6 border-t border-border/50 flex items-center justify-between">
+                                        <div className="h-1.5 flex-1 bg-muted dark:bg-slate-800 rounded-full overflow-hidden mr-4">
+                                            <div className={cn("h-full opacity-60", acc.color)} style={{ width: '65%' }} />
+                                        </div>
+                                        <p className="text-[10px] font-black text-muted-foreground">FLUIDITY: 65%</p>
+                                    </div>
+                                </Card>
+                            </motion.div>
+                        )
+                    })}
+                </AnimatePresence>
+            </div>
+
+            {/* Transfer Modal */}
+            <Modal isOpen={isTransferModalOpen} onClose={() => setIsTransferModalOpen(false)} title="Internal Transfer">
+                <form onSubmit={handleTransfer} className="space-y-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 relative z-[102]">
+                        <Dropdown
+                            label="From Vault"
+                            options={accounts.map(a => ({
+                                label: `${a.name} (${currencySymbol}${(calculateBalance(a.id) || 0).toLocaleString()})`,
+                                value: a.id
+                            }))}
+                            value={transferData.fromId}
+                            onChange={(val) => setTransferData({ ...transferData, fromId: val })}
+                            placeholder="Select..."
+                        />
+                        <Dropdown
+                            label="To Vault"
+                            options={accounts.map(a => ({
+                                label: `${a.name} (${currencySymbol}${(calculateBalance(a.id) || 0).toLocaleString()})`,
+                                value: a.id
+                            }))}
+                            value={transferData.toId}
+                            onChange={(val) => setTransferData({ ...transferData, toId: val })}
+                            placeholder="Select..."
+                        />
+                    </div>
+                    <Input label={`Amount (${currencySymbol})`} type="number" step="0.01" placeholder="0.00" value={transferData.amount} onChange={(e) => setTransferData({ ...transferData, amount: e.target.value })} required className="font-black" />
+                    <Calendar label="Date" value={transferData.date} onChange={(val) => setTransferData({ ...transferData, date: val })} />
+                    <Button type="submit" className="w-full h-14 text-lg font-black shadow-xl shadow-primary/20">Execute Transfer</Button>
+                </form>
+            </Modal>
+
+            {/* Add Account Modal */}
+            <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="New Vault Creation">
+                <form onSubmit={handleAddAccount} className="space-y-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <Input label="Account Name" placeholder="e.g. Savings Hub" value={newAccount.name} onChange={(e) => setNewAccount({ ...newAccount, name: e.target.value })} required />
+                        <Dropdown
+                            label="Vault Type"
+                            options={[
+                                { label: 'Bank Account', value: 'bank' },
+                                { label: 'Credit Card', value: 'credit_card' },
+                                { label: 'Cash Wallet', value: 'cash' },
+                                { label: 'Investment Wallet', value: 'wallet' }
+                            ]}
+                            value={newAccount.type}
+                            onChange={(val) => setNewAccount({ ...newAccount, type: val })}
+                        />
+                    </div>
+                    <Input label="Initial Deposit" type="number" step="0.1" placeholder="0.00" value={newAccount.initialBalance} onChange={(e) => setNewAccount({ ...newAccount, initialBalance: e.target.value })} required />
+                    <div className="space-y-3">
+                        <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest ml-1">Identity Color</label>
+                        <div className="flex flex-wrap gap-3">
+                            {colors.map(c => (
+                                <button
+                                    key={c.value}
+                                    type="button"
+                                    onClick={() => setNewAccount({ ...newAccount, color: c.value })}
+                                    className={`h-10 w-10 rounded-xl transition-all ${c.value} ${newAccount.color === c.value ? 'ring-4 ring-primary/30 scale-110 shadow-lg' : 'opacity-60 hover:opacity-100'}`}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                    <Button type="submit" className="w-full py-4 text-lg font-black shadow-xl">Create Vault</Button>
+                </form>
+            </Modal>
+            <ConfirmationModal
+                isOpen={isConfirmModalOpen}
+                onClose={() => setIsConfirmModalOpen(false)}
+                onConfirm={confirmAction.onConfirm}
+                title={confirmAction.title}
+                message={confirmAction.message}
+                confirmText="Verify Action"
+                type={confirmAction.type}
+            />
+        </div>
+    )
+}
+
+export default Accounts
