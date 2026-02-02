@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useTransactions } from '../context/TransactionContext'
-import { Lock, User, Mail, Check, Info } from 'lucide-react'
+import { Lock, User, Mail, Check, Info, Eye, EyeOff } from 'lucide-react'
 import Button from '../components/ui/Button'
 
 const LoginPage = () => {
     const { login } = useTransactions()
     const [formData, setFormData] = useState({ username: '', password: '' })
+    const [showPassword, setShowPassword] = useState(false)
     const [error, setError] = useState('')
 
     const handleSubmit = (e) => {
@@ -59,12 +60,19 @@ const LoginPage = () => {
                             <div className="relative group border-b border-border/50 focus-within:border-primary transition-all text-left">
                                 <Lock className="absolute left-0 top-1/2 -translate-y-1/2 text-muted-foreground/50 group-hover:text-primary/60 transition-colors" size={16} />
                                 <input
-                                    type="password"
+                                    type={showPassword ? "text" : "password"}
                                     placeholder="Access Code"
-                                    className="w-full h-12 pl-8 bg-transparent border-none outline-none text-sm font-bold placeholder:text-muted-foreground/30 text-foreground"
+                                    className="w-full h-12 pl-8 pr-10 bg-transparent border-none outline-none text-sm font-bold placeholder:text-muted-foreground/30 text-foreground"
                                     value={formData.password}
                                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                 />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-0 top-1/2 -translate-y-1/2 text-muted-foreground/30 hover:text-primary transition-colors p-2"
+                                >
+                                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                </button>
                             </div>
                         </div>
 

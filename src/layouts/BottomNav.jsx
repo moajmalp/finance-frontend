@@ -1,14 +1,14 @@
-import { Home, List, Wallet, PlusCircle, User } from 'lucide-react'
+import { Home, List, Wallet, PlusCircle, User, Menu } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { motion } from 'framer-motion'
 
-const BottomNav = ({ activeTab, setActiveTab }) => {
+const BottomNav = ({ activeTab, setActiveTab, onOpenMenu }) => {
     const items = [
         { id: 'dashboard', label: 'Home', icon: Home },
         { id: 'accounts', label: 'Vault', icon: Wallet },
         { id: 'add', label: 'Add', icon: PlusCircle, isMain: true },
         { id: 'transactions', label: 'History', icon: List },
-        { id: 'profile', label: 'Profile', icon: User },
+        { id: 'menu', label: 'Menu', icon: Menu, action: onOpenMenu },
     ]
 
     return (
@@ -16,7 +16,7 @@ const BottomNav = ({ activeTab, setActiveTab }) => {
             {items.map((item) => (
                 <button
                     key={item.id}
-                    onClick={() => setActiveTab(item.id)}
+                    onClick={() => item.action ? item.action() : setActiveTab(item.id)}
                     className={cn(
                         'flex flex-col items-center justify-center gap-1 transition-all relative py-2 flex-1 outline-none',
                         activeTab === item.id ? 'text-primary' : 'text-slate-400'

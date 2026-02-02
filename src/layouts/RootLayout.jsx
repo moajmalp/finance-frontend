@@ -1,15 +1,17 @@
 import React from 'react'
 import Sidebar from './Sidebar'
 import BottomNav from './BottomNav'
+import MobileMenu from './MobileMenu'
 import { useTransactions } from '../context/TransactionContext'
 import { useTheme } from '../context/ThemeContext'
-import { Bell, Sun, Moon, Eye, EyeOff, Plus } from 'lucide-react'
+import { Bell, Sun, Moon, Eye, EyeOff, Plus, Menu } from 'lucide-react'
 import { cn } from '../lib/utils'
 
 const RootLayout = ({ children, activeTab, setActiveTab, onOpenNotifications, unreadNotifications }) => {
     const { user, isPrivacyMode, setIsPrivacyMode } = useTransactions()
     const { theme, toggleTheme } = useTheme()
     const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false)
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false)
 
     return (
         <div className={cn(
@@ -91,6 +93,12 @@ const RootLayout = ({ children, activeTab, setActiveTab, onOpenNotifications, un
                 {/* Mobile App Header */}
                 <header className="fixed top-0 left-0 right-0 h-16 glass border-b border-border/50 z-40 flex lg:hidden items-center justify-between px-6">
                     <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => setIsMobileMenuOpen(true)}
+                            className="p-2 -ml-2 text-muted-foreground hover:text-primary transition-colors"
+                        >
+                            <Menu size={20} />
+                        </button>
                         <div className="h-2 w-2 rounded-full bg-primary animate-pulse shadow-glow" />
                         <h1 className="text-sm font-black text-gradient uppercase tracking-[0.2em]">{activeTab.replace('_', ' ')}</h1>
                     </div>
@@ -135,7 +143,18 @@ const RootLayout = ({ children, activeTab, setActiveTab, onOpenNotifications, un
                 </div>
             </main>
 
-            <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
+            <BottomNav
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                onOpenMenu={() => setIsMobileMenuOpen(true)}
+            />
+
+            <MobileMenu
+                isOpen={isMobileMenuOpen}
+                onClose={() => setIsMobileMenuOpen(false)}
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+            />
         </div>
     )
 }
