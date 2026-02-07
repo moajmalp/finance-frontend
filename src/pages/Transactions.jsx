@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search, TrendingUp, TrendingDown, Filter, Edit2, Trash2, Calendar as CalendarIcon, ArrowLeftRight } from 'lucide-react'
+import { Search, TrendingUp, TrendingDown, Filter, Edit2, Trash2, Calendar as CalendarIcon, ArrowLeftRight, ChevronLeft, ChevronRight } from 'lucide-react'
 import Card from '../components/ui/Card'
 import Dropdown from '../components/ui/Dropdown'
 import Button from '../components/ui/Button'
@@ -16,6 +16,8 @@ import PrivacyValue from '../components/ui/PrivacyValue'
 const Transactions = () => {
     const { transactions, deleteTransaction, accounts, categories, undoDelete, currencySymbol } = useTransactions()
     const [search, setSearch] = useState('')
+    const [viewMode, setViewMode] = useState('list') // 'list' or 'calendar'
+    const [heatmapDate, setHeatmapDate] = useState(new Date())
     const [isToastOpen, setIsToastOpen] = useState(false)
     const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false)
     const [filters, setFilters] = useState({
@@ -120,6 +122,32 @@ const Transactions = () => {
                 </div>
             </div>
 
+            {/* View Toggle */}
+            <div className="flex bg-muted/30 p-1 rounded-xl w-fit border border-border/50">
+                <button
+                    onClick={() => setViewMode('list')}
+                    className={cn(
+                        "px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all",
+                        viewMode === 'list'
+                            ? "bg-primary text-white shadow-lg shadow-primary/20"
+                            : "text-muted-foreground hover:text-foreground"
+                    )}
+                >
+                    List View
+                </button>
+                <button
+                    onClick={() => setViewMode('calendar')}
+                    className={cn(
+                        "px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all",
+                        viewMode === 'calendar'
+                            ? "bg-primary text-white shadow-lg shadow-primary/20"
+                            : "text-muted-foreground hover:text-foreground"
+                    )}
+                >
+                    Heatmap
+                </button>
+            </div>
+
             {/* Advanced Filter Panel */}
             <AnimatePresence>
                 {isFilterPanelOpen && (
@@ -200,141 +228,256 @@ const Transactions = () => {
                 )}
             </AnimatePresence>
 
-            <Card className="overflow-hidden p-0 border-none shadow-2xl shadow-indigo-100/30 dark:shadow-none">
-                <div className="overflow-x-auto">
-                    {/* Desktop Table View */}
-                    <table className="w-full text-left hidden sm:table">
-                        <thead className="bg-muted border-b border-border">
-                            <tr>
-                                <th className="px-8 py-5 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Transaction</th>
-                                <th className="px-8 py-5 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Date</th>
-                                <th className="px-8 py-5 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Details</th>
-                                <th className="px-8 py-5 text-right text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Amount</th>
-                                <th className="px-8 py-5 text-center text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-border">
-                            <AnimatePresence mode="popLayout">
-                                {filteredTransactions.map((t) => (
-                                    <motion.tr
-                                        key={t.id}
-                                        layout
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        exit={{ opacity: 0, x: -20 }}
-                                        className="group hover:bg-muted/50 transition-colors"
-                                    >
-                                        <td className="px-8 py-6">
-                                            <div className="flex items-center gap-4">
-                                                <div className={cn(
-                                                    "flex h-12 w-12 shrink-0 items-center justify-center rounded-[1rem] transition-transform group-hover:scale-110 shadow-sm",
-                                                    t.transferId ? "bg-primary/10 text-primary" : (t.type === 'income' ? 'bg-emerald-theme text-emerald-theme' : 'bg-rose-theme text-rose-theme')
-                                                )}>
-                                                    {t.transferId ? <ArrowLeftRight size={20} /> : (t.type === 'income' ? <TrendingUp size={20} /> : <TrendingDown size={20} />)}
+            {viewMode === 'list' && (
+                <Card className="overflow-hidden p-0 border-none shadow-2xl shadow-indigo-100/30 dark:shadow-none">
+                    <div className="overflow-x-auto">
+                        {/* Desktop Table View */}
+                        <table className="w-full text-left hidden sm:table">
+                            <thead className="bg-muted border-b border-border">
+                                <tr>
+                                    <th className="px-8 py-5 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Transaction</th>
+                                    <th className="px-8 py-5 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Date</th>
+                                    <th className="px-8 py-5 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Details</th>
+                                    <th className="px-8 py-5 text-right text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Amount</th>
+                                    <th className="px-8 py-5 text-center text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-border">
+                                <AnimatePresence mode="popLayout">
+                                    {filteredTransactions.map((t) => (
+                                        <motion.tr
+                                            key={t.id}
+                                            layout
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0, x: -20 }}
+                                            className="group hover:bg-muted/50 transition-colors"
+                                        >
+                                            <td className="px-8 py-6">
+                                                <div className="flex items-center gap-4">
+                                                    <div className={cn(
+                                                        "flex h-12 w-12 shrink-0 items-center justify-center rounded-[1rem] transition-transform group-hover:scale-110 shadow-sm",
+                                                        t.transferId ? "bg-primary/10 text-primary" : (t.type === 'income' ? 'bg-emerald-theme text-emerald-theme' : 'bg-rose-theme text-rose-theme')
+                                                    )}>
+                                                        {t.transferId ? <ArrowLeftRight size={20} /> : (t.type === 'income' ? <TrendingUp size={20} /> : <TrendingDown size={20} />)}
+                                                    </div>
+                                                    <div>
+                                                        <span className="font-bold text-foreground block">{t.category}</span>
+                                                        {t.transferId && <span className="text-[9px] font-black text-primary uppercase tracking-widest">Linked Transfer</span>}
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <span className="font-bold text-foreground block">{t.category}</span>
-                                                    {t.transferId && <span className="text-[9px] font-black text-primary uppercase tracking-widest">Linked Transfer</span>}
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-8 py-6 text-sm font-medium text-muted-foreground whitespace-nowrap">{t.date}</td>
-                                        <td className="px-8 py-6 text-sm text-muted-foreground max-w-[200px] truncate italic">{t.note || '-'}</td>
-                                        <td className={`px-8 py-6 text-right font-black text-lg ${t.type === 'income' ? 'text-emerald-theme' : 'text-foreground'}`}>
-                                            {t.type === 'income' ? '+' : '-'}
-                                            <PrivacyValue>{currencySymbol}</PrivacyValue>
-                                            <PrivacyValue>{t.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</PrivacyValue>
-                                        </td>
-                                        <td className="px-8 py-6">
-                                            <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button
-                                                    onClick={() => handleEditClick(t)}
-                                                    className="p-2 text-muted-foreground hover:text-primary hover:bg-muted rounded-lg transition-colors"
-                                                >
-                                                    <Edit2 size={16} />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDeleteClick(t)}
-                                                    className="p-2 text-muted-foreground hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-colors"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </motion.tr>
-                                ))}
-                            </AnimatePresence>
-                        </tbody>
-                    </table>
-
-                    {/* Mobile Card View */}
-                    <div className="sm:hidden divide-y divide-border/50">
-                        <AnimatePresence mode="popLayout">
-                            {filteredTransactions.map((t) => (
-                                <motion.div
-                                    key={t.id}
-                                    layout
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, scale: 0.95 }}
-                                    className="p-1 px-4 active:bg-muted/50 transition-colors"
-                                >
-                                    <div className="py-6 flex items-center justify-between">
-                                        <div className="flex items-center gap-4">
-                                            <div className={cn(
-                                                "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl shadow-sm",
-                                                t.transferId ? "bg-primary/10 text-primary" : (t.type === 'income' ? 'bg-emerald-theme text-emerald-theme' : 'bg-rose-theme text-rose-theme')
-                                            )}>
-                                                {t.transferId ? <ArrowLeftRight size={24} /> : (t.type === 'income' ? <TrendingUp size={24} /> : <TrendingDown size={24} />)}
-                                            </div>
-                                            <div className="space-y-1">
-                                                <p className="font-black text-foreground text-base tracking-tight">{t.category}</p>
-                                                <div className="flex flex-wrap items-center gap-2">
-                                                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-wider">{t.date}</p>
-                                                    {t.transferId && <span className="text-[9px] font-black text-primary uppercase tracking-widest px-1.5 py-0.5 bg-primary/5 rounded-md">Transfer</span>}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="flex flex-col items-end gap-3">
-                                            <p className={`font-black text-lg tracking-tight ${t.type === 'income' ? 'text-emerald-theme' : 'text-foreground'}`}>
+                                            </td>
+                                            <td className="px-8 py-6 text-sm font-medium text-muted-foreground whitespace-nowrap">{t.date}</td>
+                                            <td className="px-8 py-6 text-sm text-muted-foreground max-w-[200px] truncate italic">{t.note || '-'}</td>
+                                            <td className={`px-8 py-6 text-right font-black text-lg ${t.type === 'income' ? 'text-emerald-theme' : 'text-foreground'}`}>
                                                 {t.type === 'income' ? '+' : '-'}
                                                 <PrivacyValue>{currencySymbol}</PrivacyValue>
                                                 <PrivacyValue>{t.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</PrivacyValue>
-                                            </p>
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => handleEditClick(t)}
-                                                    className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground active:text-primary active:bg-primary/10 transition-colors"
-                                                >
-                                                    <Edit2 size={14} />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDeleteClick(t)}
-                                                    className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground active:text-rose-500 active:bg-rose-500/10 transition-colors"
-                                                >
-                                                    <Trash2 size={14} />
-                                                </button>
+                                            </td>
+                                            <td className="px-8 py-6">
+                                                <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button
+                                                        onClick={() => handleEditClick(t)}
+                                                        className="p-2 text-muted-foreground hover:text-primary hover:bg-muted rounded-lg transition-colors"
+                                                    >
+                                                        <Edit2 size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteClick(t)}
+                                                        className="p-2 text-muted-foreground hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-colors"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </motion.tr>
+                                    ))}
+                                </AnimatePresence>
+                            </tbody>
+                        </table>
+
+                        {/* Mobile Card View */}
+                        <div className="sm:hidden divide-y divide-border/50">
+                            <AnimatePresence mode="popLayout">
+                                {filteredTransactions.map((t) => (
+                                    <motion.div
+                                        key={t.id}
+                                        layout
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.95 }}
+                                        className="p-1 px-4 active:bg-muted/50 transition-colors"
+                                    >
+                                        <div className="py-6 flex items-center justify-between">
+                                            <div className="flex items-center gap-4">
+                                                <div className={cn(
+                                                    "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl shadow-sm",
+                                                    t.transferId ? "bg-primary/10 text-primary" : (t.type === 'income' ? 'bg-emerald-theme text-emerald-theme' : 'bg-rose-theme text-rose-theme')
+                                                )}>
+                                                    {t.transferId ? <ArrowLeftRight size={24} /> : (t.type === 'income' ? <TrendingUp size={24} /> : <TrendingDown size={24} />)}
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <p className="font-black text-foreground text-base tracking-tight">{t.category}</p>
+                                                    <div className="flex flex-wrap items-center gap-2">
+                                                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-wider">{t.date}</p>
+                                                        {t.transferId && <span className="text-[9px] font-black text-primary uppercase tracking-widest px-1.5 py-0.5 bg-primary/5 rounded-md">Transfer</span>}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col items-end gap-3">
+                                                <p className={`font-black text-lg tracking-tight ${t.type === 'income' ? 'text-emerald-theme' : 'text-foreground'}`}>
+                                                    {t.type === 'income' ? '+' : '-'}
+                                                    <PrivacyValue>{currencySymbol}</PrivacyValue>
+                                                    <PrivacyValue>{t.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</PrivacyValue>
+                                                </p>
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => handleEditClick(t)}
+                                                        className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground active:text-primary active:bg-primary/10 transition-colors"
+                                                    >
+                                                        <Edit2 size={14} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteClick(t)}
+                                                        className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground active:text-rose-500 active:bg-rose-500/10 transition-colors"
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </motion.div>
-                            ))}
-                        </AnimatePresence>
-                    </div>
-
-                    {filteredTransactions.length === 0 && (
-                        <div className="py-24 text-center">
-                            <EmptyState
-                                icon={Filter}
-                                title="No matches found"
-                                message="Try adjusting your filters or search terms"
-                                actionText="Clear Filters"
-                                onAction={resetFilters}
-                            />
+                                    </motion.div>
+                                ))}
+                            </AnimatePresence>
                         </div>
-                    )}
-                </div>
-            </Card>
+
+                        {filteredTransactions.length === 0 && (
+                            <div className="py-24 text-center">
+                                <EmptyState
+                                    icon={Filter}
+                                    title="No matches found"
+                                    message="Try adjusting your filters or search terms"
+                                    actionText="Clear Filters"
+                                    onAction={resetFilters}
+                                />
+                            </div>
+                        )}
+                    </div>
+                </Card>
+            )}
+
+            {/* Feature 2: Calendar Heatmap View */}
+            {
+                viewMode === 'calendar' && (
+                    <div className="animate-in fade-in slide-in-from-bottom-5 duration-500">
+                        <Card className="p-6 sm:p-8 bg-card border-none shadow-2xl">
+                            {/* Heatmap Header */}
+                            <div className="flex items-center justify-between mb-6">
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={() => setHeatmapDate(new Date(heatmapDate.setMonth(heatmapDate.getMonth() - 1)))}
+                                    className="h-8 w-8 rounded-xl"
+                                >
+                                    <ChevronLeft size={16} />
+                                </Button>
+                                <span className="text-sm font-black uppercase tracking-widest text-foreground">
+                                    {heatmapDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                                </span>
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={() => setHeatmapDate(new Date(heatmapDate.setMonth(heatmapDate.getMonth() + 1)))}
+                                    className="h-8 w-8 rounded-xl"
+                                >
+                                    <ChevronRight size={16} />
+                                </Button>
+                            </div>
+
+                            <div className="grid grid-cols-7 gap-2 sm:gap-4 mb-4">
+                                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                                    <div key={day} className="text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground py-2">
+                                        {day}
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="grid grid-cols-7 gap-2 sm:gap-4">
+                                {Array.from({ length: 35 }).map((_, i) => {
+                                    // Mock Logic for Heatmap
+                                    const day = i + 1
+                                    const daysInMonth = new Date(heatmapDate.getFullYear(), heatmapDate.getMonth() + 1, 0).getDate()
+
+                                    if (day > daysInMonth) return <div key={i} />
+
+                                    // Deterministic Random for consistency in mock based on month
+                                    const seed = heatmapDate.getMonth() + 1
+                                    const hasSpend = (day * 13 * seed) % 3 !== 0
+                                    const amount = hasSpend ? (day * 123 * seed) % 3500 : 0
+                                    let bgClass = "bg-emerald-500/10 border-emerald-500/20" // Zero Spend
+                                    let textClass = "text-muted-foreground"
+
+                                    if (amount > 2000) {
+                                        bgClass = "bg-rose-500/20 border-rose-500/30 dark:bg-rose-500/10 relative overflow-hidden" // High Spend
+                                        textClass = "text-rose-500"
+                                    } else if (amount > 0) {
+                                        bgClass = "bg-purple-500/20 border-purple-500/30 dark:bg-purple-500/10" // Medium Spend
+                                        textClass = "text-purple-500"
+                                    }
+
+                                    return (
+                                        <div
+                                            key={i}
+                                            className={cn(
+                                                "aspect-square rounded-2xl border flex flex-col items-center justify-center relative group transition-all hover:scale-105 cursor-pointer",
+                                                bgClass
+                                            )}
+                                        >
+                                            <span className={cn("text-sm font-black mb-1", textClass)}>{day}</span>
+                                            {amount > 0 && (
+                                                <span className="text-[9px] font-bold opacity-80 text-foreground">
+                                                    -{currencySymbol}{amount}
+                                                </span>
+                                            )}
+
+                                            {/* High Spend Dot */}
+                                            {amount > 2000 && (
+                                                <div className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse" />
+                                            )}
+
+                                            {/* Tooltip */}
+                                            <div className="absolute bottom-full mb-2 hidden group-hover:block z-20 min-w-[120px] bg-popover text-popover-foreground text-xs p-2 rounded-xl shadow-xl border border-border">
+                                                <p className="font-bold border-b border-border/50 pb-1 mb-1">{heatmapDate.toLocaleString('default', { month: 'short' })} {day}</p>
+                                                {amount > 0 ? (
+                                                    <div className="space-y-1">
+                                                        <p>Grocery: {currencySymbol}{Math.floor(amount * 0.4)}</p>
+                                                        <p>Transport: {currencySymbol}{Math.floor(amount * 0.6)}</p>
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-emerald-500 font-bold">No Spending</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        </Card>
+                        <div className="mt-4 flex gap-6 justify-center">
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-emerald-500/20 border border-emerald-500/50" />
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Zero Spend</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-purple-500/20 border border-purple-500/50" />
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Moderate</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-rose-500/20 border border-rose-500/50" />
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">High Intensity</span>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
 
             <ConfirmationModal
                 isOpen={isDeleteModalOpen}
@@ -360,7 +503,7 @@ const Transactions = () => {
                 actionLabel="Undo"
                 onAction={undoDelete}
             />
-        </div>
+        </div >
     )
 }
 

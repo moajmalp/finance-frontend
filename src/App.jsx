@@ -13,11 +13,12 @@ import Activity from './pages/Activity'
 import Analytics from './pages/Analytics'
 import Reports from './pages/Reports'
 import Profile from './pages/Profile'
+import Simulation from './pages/Simulation'
 import NotificationCenter from './components/NotificationCenter'
 import { TransactionProvider, useTransactions } from './context/TransactionContext'
 import { useTheme } from './context/ThemeContext'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Home, List, PlusCircle, Settings, Wallet, Repeat, Target, History, BarChart2, FileText, Users } from 'lucide-react'
+import { Home, List, PlusCircle, Settings, Wallet, Repeat, Target, History, BarChart2, FileText, Users, TrendingUp } from 'lucide-react'
 
 function AppContent() {
   const { isAuthenticated, alerts, isPrivacyMode, setIsPrivacyMode } = useTransactions()
@@ -83,6 +84,8 @@ function AppContent() {
         return <Debts />
       case 'goals':
         return <Goals />
+      case 'simulation':
+        return <Simulation />
       case 'activity_log':
         return <Activity setActiveTab={setActiveTab} />
       case 'analytics':
@@ -106,6 +109,7 @@ function AppContent() {
     { id: 'subscriptions', label: 'Autopay', icon: Repeat },
     { id: 'debts', label: 'Splits', icon: Users },
     { id: 'goals', label: 'Targets', icon: Target },
+    { id: 'simulation', label: 'Simulate', icon: TrendingUp },
     { id: 'settings', label: 'Settings', icon: Settings },
   ]
 

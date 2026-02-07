@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Trash2, Tag, ChevronRight, Monitor, Palette, Bell, Shield, Download, Activity, Eye, EyeOff, Globe, Clock, Landmark } from 'lucide-react'
+import { Plus, Trash2, Tag, ChevronRight, Monitor, Palette, Bell, Shield, Download, Activity, Eye, EyeOff, Globe, Clock, Landmark, Sparkles, X } from 'lucide-react'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
@@ -15,7 +15,7 @@ import { cn } from '../lib/utils'
 import ConfirmationModal from '../components/ui/ConfirmationModal'
 
 const SettingsPage = () => {
-    const { categories, addCategory, deleteCategory, budgets, setBudget, isPrivacyMode, setIsPrivacyMode, currency, setCurrency, timezone, setTimezone, currencySymbol } = useTransactions()
+    const { categories, addCategory, deleteCategory, budgets, setBudget, isPrivacyMode, setIsPrivacyMode, currency, setCurrency, timezone, setTimezone, currencySymbol, subscriptionKeywords, addSubscriptionKeyword, deleteSubscriptionKeyword } = useTransactions()
     const [activeType, setActiveType] = useState('expense')
     const [newCategory, setNewCategory] = useState('')
     const [toast, setToast] = useState({ isOpen: false, message: '' })
@@ -23,6 +23,7 @@ const SettingsPage = () => {
     const [confirmAction, setConfirmAction] = useState({ title: '', message: '', onConfirm: () => { } })
     const [tempCurrency, setTempCurrency] = useState(currency)
     const [tempTimezone, setTempTimezone] = useState(timezone)
+    const [newKeyword, setNewKeyword] = useState('')
 
     const handleAdd = (e) => {
         e.preventDefault()
@@ -192,6 +193,92 @@ const SettingsPage = () => {
                     </div>
                 </Card>
 
+                {/* Smart Subscription Detection Card */}
+                <Card className="flex flex-col gap-8 shadow-2xl shadow-purple-500/5 border-none rounded-[2.5rem] lg:col-span-2 p-6 sm:p-10 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
+                        <Sparkles size={120} />
+                    </div>
+
+                    <div className="flex items-center gap-4 relative z-10">
+                        <div className="flex h-14 w-14 items-center justify-center rounded-[1.25rem] bg-purple-500/10 text-purple-500 shadow-lg shadow-purple-500/10">
+                            <Sparkles size={28} />
+                        </div>
+                        <div>
+                            <h3 className="text-2xl font-black text-foreground tracking-tight">Smart Detection</h3>
+                            <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mt-1">Subscription Auto-Discovery & Keywords</p>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col lg:flex-row gap-8 relative z-10">
+                        <div className="flex-1 space-y-6">
+                            <p className="text-sm text-muted-foreground leading-relaxed">
+                                Define keywords that should trigger automatic subscription tracking. When you use these words in a transaction narrative, the system will suggest creating a recurring subscription.
+                            </p>
+
+                            <div className="flex gap-3">
+                                <Input
+                                    placeholder="Add keyword (e.g., 'Apple TV')"
+                                    value={newKeyword}
+                                    onChange={(e) => setNewKeyword(e.target.value)}
+                                    className="flex-1 h-14 rounded-2xl bg-card-muted/50 border-border/50 focus:bg-card transition-all"
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault()
+                                            if (newKeyword.trim()) {
+                                                addSubscriptionKeyword(newKeyword.trim())
+                                                setNewKeyword('')
+                                                setToast({ isOpen: true, message: 'Keyword added' })
+                                            }
+                                        }
+                                    }}
+                                />
+                                <Button
+                                    onClick={() => {
+                                        if (newKeyword.trim()) {
+                                            addSubscriptionKeyword(newKeyword.trim())
+                                            setNewKeyword('')
+                                            setToast({ isOpen: true, message: 'Keyword added' })
+                                        }
+                                    }}
+                                    className="h-14 px-8 rounded-2xl shadow-xl shadow-purple-500/20 bg-purple-600 hover:bg-purple-700 text-white font-bold uppercase tracking-widest text-xs"
+                                >
+                                    Add
+                                </Button>
+                            </div>
+                        </div>
+
+                        <div className="flex-1 bg-card-muted/30 rounded-3xl p-6 border border-border/50">
+                            <div className="flex flex-wrap gap-3">
+                                <AnimatePresence mode="popLayout">
+                                    {subscriptionKeywords.map(keyword => (
+                                        <motion.div
+                                            key={keyword}
+                                            layout
+                                            initial={{ opacity: 0, scale: 0.8 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            exit={{ opacity: 0, scale: 0.8 }}
+                                            className="group flex items-center gap-2 pl-4 pr-2 py-2.5 rounded-xl bg-card border border-border/50 hover:border-purple-500/50 hover:shadow-lg hover:shadow-purple-500/5 transition-all cursor-default"
+                                        >
+                                            <span className="text-sm font-bold text-foreground">{keyword}</span>
+                                            <button
+                                                onClick={() => deleteSubscriptionKeyword(keyword)}
+                                                className="h-6 w-6 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-rose-500 hover:text-white transition-all opacity-0 group-hover:opacity-100"
+                                            >
+                                                <X size={14} />
+                                            </button>
+                                        </motion.div>
+                                    ))}
+                                    {subscriptionKeywords.length === 0 && (
+                                        <div className="w-full text-center py-8 text-muted-foreground text-sm italic opacity-60">
+                                            No keywords defined. Add one to get started.
+                                        </div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+                        </div>
+                    </div>
+                </Card>
+
                 {/* System Preferences */}
                 <Card className="flex flex-col gap-10 shadow-premium border border-border/40 dark:border-white/5 rounded-[3rem] lg:col-span-2 p-8 sm:p-12 relative overflow-hidden group bg-card dark:bg-slate-900/60 backdrop-blur-xl">
                     <div className="absolute -right-20 -bottom-20 h-64 w-64 bg-primary/5 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-1000" />
@@ -246,6 +333,8 @@ const SettingsPage = () => {
                             </button>
                         </div>
                     </div>
+
+
 
                     {/* Regional Settings */}
                     <div className="pt-10 mt-2 border-t border-border/50">

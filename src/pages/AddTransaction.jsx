@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react'
-import { ArrowLeft, CheckCircle2, Image as ImageIcon, Users, Camera, Trash2, X } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { ArrowLeft, CheckCircle2, Image as ImageIcon, Users, Camera, Trash2, X, Sparkles } from 'lucide-react'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
@@ -13,7 +13,7 @@ import { cn } from '../lib/utils'
 import PrivacyValue from '../components/ui/PrivacyValue'
 
 const AddTransaction = ({ onSuccess }) => {
-    const { addTransaction, categories, accounts, calculateBalance, currencySymbol } = useTransactions()
+    const { addTransaction, addSubscription, categories, accounts, calculateBalance, currencySymbol, subscriptionKeywords } = useTransactions()
     const fileInputRef = useRef(null)
     const [formData, setFormData] = useState({
         amount: '',
@@ -30,6 +30,56 @@ const AddTransaction = ({ onSuccess }) => {
     const [errors, setErrors] = useState({})
     const [toast, setToast] = useState({ isOpen: false, message: '' })
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
+
+    // Subscription Detection State
+    const [isSubscriptionDetected, setIsSubscriptionDetected] = useState(false)
+    const [createSubscription, setCreateSubscription] = useState(false)
+
+    // Feature 1: Receipt Scanning State
+    const [isScanning, setIsScanning] = useState(false)
+    const [scanSuccess, setScanSuccess] = useState(false)
+
+    const handleScanReceipt = () => {
+        setIsScanning(true)
+        // Simulate OCR delay
+        setTimeout(() => {
+            setIsScanning(false)
+            setScanSuccess(true)
+
+            // Auto-fill Mock Data
+            setFormData(prev => ({
+                ...prev,
+                amount: '4850.00',
+                note: 'Team Lunch at Grill House',
+                category: 'Food',
+                date: new Date().toISOString().split('T')[0],
+                // Use a placeholder image if none selected, or keep current
+                receiptUrl: prev.receiptUrl || 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&q=80&w=300'
+            }))
+
+            setToast({ isOpen: true, message: 'Receipt Scanned & Data Extracted' })
+
+            // Reset success flash after a moment
+            setTimeout(() => setScanSuccess(false), 2000)
+        }, 1500)
+    }
+
+    const handleNoteChange = (e) => {
+        const val = e.target.value
+        setFormData({ ...formData, note: val })
+
+        const hasKeyword = subscriptionKeywords.some(keyword =>
+            val.toLowerCase().includes(keyword.toLowerCase())
+        )
+        setIsSubscriptionDetected(hasKeyword)
+
+        // Reset checkbox if keyword is removed, or keep it? 
+        // User flow: "type Netflix" -> box appears. 
+        // If they backspace, box should probably disappear.
+        if (!hasKeyword) {
+            setCreateSubscription(false)
+        }
+    }
 
     const validate = () => {
         const newErrors = {}
@@ -69,11 +119,29 @@ const AddTransaction = ({ onSuccess }) => {
     }
 
     const confirmSubmit = () => {
+        // 1. Add Transaction
         addTransaction({
             ...formData,
             amount: Number(formData.amount),
             splitAmount: formData.isSplit ? Number(formData.splitAmount) : undefined
         })
+
+        // 2. Add Subscription if detected and checked
+        if (isSubscriptionDetected && createSubscription) {
+            const nextDueDate = new Date()
+            nextDueDate.setDate(nextDueDate.getDate() + 30)
+
+            addSubscription({
+                name: formData.note || 'New Subscription',
+                amount: Number(formData.amount),
+                category: formData.category,
+                accountId: formData.accountId,
+                frequency: 'monthly',
+                nextBilling: nextDueDate.toISOString(),
+                active: true
+            })
+        }
+
         setToast({ isOpen: true, message: 'Transaction saved successfully' })
         setTimeout(() => {
             onSuccess()
@@ -121,7 +189,10 @@ const AddTransaction = ({ onSuccess }) => {
                             value={formData.amount}
                             onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                             error={errors.amount}
-                            className="h-16 text-2xl font-black rounded-2xl bg-card/50"
+                            className={cn(
+                                "h-16 text-2xl font-black rounded-2xl bg-card/50 transition-all duration-500",
+                                scanSuccess && "border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-500/5"
+                            )}
                         />
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 relative z-[102]">
@@ -232,6 +303,31 @@ const AddTransaction = ({ onSuccess }) => {
                                     </button>
                                 )}
                             </div>
+
+                            {/* Smart OCR Button */}
+                            <button
+                                type="button"
+                                onClick={handleScanReceipt}
+                                disabled={isScanning}
+                                className={cn(
+                                    "w-full h-12 rounded-xl flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest transition-all",
+                                    isScanning
+                                        ? "bg-primary/10 text-primary cursor-wait"
+                                        : "bg-card border border-border/50 text-muted-foreground hover:text-primary hover:border-primary/50"
+                                )}
+                            >
+                                {isScanning ? (
+                                    <>
+                                        <Sparkles size={16} className="animate-spin" />
+                                        Scanning Intelligence...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Camera size={16} />
+                                        Scan Receipt (Auto-Fill)
+                                    </>
+                                )}
+                            </button>
                         </div>
 
                         <Calendar
@@ -241,13 +337,52 @@ const AddTransaction = ({ onSuccess }) => {
                             error={errors.date}
                         />
 
-                        <Input
-                            label="Narrative (Optional)"
-                            placeholder="Add transaction context..."
-                            value={formData.note}
-                            onChange={(e) => setFormData({ ...formData, note: e.target.value })}
-                            className="h-14 rounded-2xl bg-card/50"
-                        />
+                        <div>
+                            <Input
+                                label="Narrative (Optional)"
+                                placeholder="Add transaction context..."
+                                value={formData.note}
+                                onChange={handleNoteChange}
+                                className={cn(
+                                    "h-14 rounded-2xl bg-card/50 transition-all duration-500",
+                                    scanSuccess && "border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-500/5"
+                                )}
+                            />
+
+                            {/* Smart Subscription Detection UI */}
+                            <AnimatePresence>
+                                {isSubscriptionDetected && (
+                                    <motion.div
+                                        initial={{ opacity: 0, height: 0, y: -10 }}
+                                        animate={{ opacity: 1, height: 'auto', y: 0 }}
+                                        exit={{ opacity: 0, height: 0, y: -10 }}
+                                        className="mt-3 overflow-hidden"
+                                    >
+                                        <div
+                                            className={cn(
+                                                "flex items-center gap-3 p-4 rounded-xl border transition-colors cursor-pointer",
+                                                createSubscription
+                                                    ? "bg-primary/10 border-primary/50"
+                                                    : "bg-card border-purple-500/50 hover:bg-muted/50"
+                                            )}
+                                            onClick={() => setCreateSubscription(!createSubscription)}
+                                        >
+                                            <div className={cn(
+                                                "h-5 w-5 rounded-md border flex items-center justify-center transition-colors",
+                                                createSubscription ? "bg-primary border-primary" : "border-primary/50"
+                                            )}>
+                                                {createSubscription && <CheckCircle2 size={14} className="text-white" />}
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-bold text-foreground">Detected potential subscription</span>
+                                                <span className="text-[10px] text-muted-foreground">Automatically track repeats</span>
+                                            </div>
+                                            <Sparkles size={16} className="ml-auto text-primary animate-pulse" />
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
                     </div>
 
                     <Button type="submit" className="w-full h-16 text-sm font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-primary/30 transition-all active:scale-95">
@@ -261,7 +396,7 @@ const AddTransaction = ({ onSuccess }) => {
                 onClose={() => setIsConfirmModalOpen(false)}
                 onConfirm={confirmSubmit}
                 title="Verify Record Entry"
-                message={`Check the details before committing to vault:\n\n${formData.type.toUpperCase()}: ${formData.category}\nAmount: ${currencySymbol}${formData.amount}\nDate: ${formData.date}`}
+                message={`Check the details before committing to vault:\n\n${formData.type.toUpperCase()}: ${formData.category}\nAmount: ${currencySymbol}${formData.amount}\nDate: ${formData.date}${createSubscription ? '\n\n(+ New Subscription Created)' : ''}`}
                 confirmText="Commit Record"
                 type="primary"
             />

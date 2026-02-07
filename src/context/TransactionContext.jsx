@@ -63,7 +63,9 @@ const STORAGE_KEYS = {
     LOGS: 'finance_logs_v2',
     PRIVACY: 'finance_privacy_mode',
     CURRENCY: 'finance_currency',
-    TIMEZONE: 'finance_timezone'
+    CURRENCY: 'finance_currency',
+    TIMEZONE: 'finance_timezone',
+    SUB_KEYWORDS: 'finance_sub_keywords_v2'
 }
 
 
@@ -88,6 +90,8 @@ const DEFAULT_CATEGORIES = {
     income: ['Salary', 'Freelance', 'Investment', 'Gift', 'Other']
 }
 
+const DEFAULT_SUB_KEYWORDS = ['Netflix', 'Spotify', 'Youtube', 'Prime', 'Hotstar', 'Gym', 'Wifi', 'Rent']
+
 export const TransactionProvider = ({ children }) => {
     // Persistent State initialization
     const [transactions, setTransactions] = useState(() => getSafeStorage(STORAGE_KEYS.TRANSACTIONS, []))
@@ -100,6 +104,7 @@ export const TransactionProvider = ({ children }) => {
     const [isPrivacyMode, setIsPrivacyMode] = useState(() => getSafeStorage(STORAGE_KEYS.PRIVACY, false))
     const [currency, setCurrency] = useState(() => getSafeStorage(STORAGE_KEYS.CURRENCY, 'INR'))
     const [timezone, setTimezone] = useState(() => getSafeStorage(STORAGE_KEYS.TIMEZONE, Intl.DateTimeFormat().resolvedOptions().timeZone))
+    const [subscriptionKeywords, setSubscriptionKeywords] = useState(() => getSafeStorage(STORAGE_KEYS.SUB_KEYWORDS, DEFAULT_SUB_KEYWORDS))
 
     const currencySymbol = useMemo(() => currency === 'INR' ? '₹' : '$', [currency])
 
@@ -194,8 +199,10 @@ export const TransactionProvider = ({ children }) => {
         localStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(authData))
         localStorage.setItem(STORAGE_KEYS.PRIVACY, JSON.stringify(isPrivacyMode))
         localStorage.setItem(STORAGE_KEYS.CURRENCY, JSON.stringify(currency))
+        localStorage.setItem(STORAGE_KEYS.CURRENCY, JSON.stringify(currency))
         localStorage.setItem(STORAGE_KEYS.TIMEZONE, JSON.stringify(timezone))
-    }, [transactions, accounts, categories, budgets, subscriptions, debts, alerts, goals, activityLog, authData, isPrivacyMode, currency, timezone])
+        localStorage.setItem(STORAGE_KEYS.SUB_KEYWORDS, JSON.stringify(subscriptionKeywords))
+    }, [transactions, accounts, categories, budgets, subscriptions, debts, alerts, goals, activityLog, authData, isPrivacyMode, currency, timezone, subscriptionKeywords])
 
     // Actions
     const addAccount = (account) => {
@@ -408,6 +415,18 @@ export const TransactionProvider = ({ children }) => {
         setGoals(prev => prev.map(g => g.id === id ? { ...g, currentAmount: amount } : g))
     }
 
+    const addSubscriptionKeyword = (keyword) => {
+        if (!subscriptionKeywords.includes(keyword)) {
+            setSubscriptionKeywords(prev => [...prev, keyword])
+            logActivity('Configuration Updated', `Added '${keyword}' to subscription detector`)
+        }
+    }
+
+    const deleteSubscriptionKeyword = (keyword) => {
+        setSubscriptionKeywords(prev => prev.filter(k => k !== keyword))
+        logActivity('Configuration Updated', `Removed '${keyword}' from subscription detector`)
+    }
+
     return (
         <TransactionContext.Provider value={{
             transactions,
@@ -461,7 +480,10 @@ export const TransactionProvider = ({ children }) => {
             isAuthenticated,
             user,
             setCategories,
-            setAccounts
+            setAccounts,
+            subscriptionKeywords,
+            addSubscriptionKeyword,
+            deleteSubscriptionKeyword
         }}>
             {children}
         </TransactionContext.Provider>

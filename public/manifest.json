@@ -1,22 +1,22 @@
 {
-    "short_name": "AJ Finance",
-    "name": "AJ Finance",
+    "short_name": "FLUX",
+    "name": "FLUX Finance",
     "icons": [
         {
-            "src": "favicon.svg",
-            "sizes": "any",
-            "type": "image/svg+xml",
-            "purpose": "any"
+            "src": "flux_icon.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
         },
         {
-            "src": "favicon.svg",
+            "src": "flux_icon.png",
             "sizes": "512x512",
-            "type": "image/svg+xml",
-            "purpose": "maskable"
+            "type": "image/png",
+            "purpose": "any maskable"
         }
     ],
     "start_url": "/",
     "display": "standalone",
-    "theme_color": "#4f46e5",
-    "background_color": "#f8fafc"
+    "theme_color": "#0a0a0f",
+    "background_color": "#0a0a0f"
 }

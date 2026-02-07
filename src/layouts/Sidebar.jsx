@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Home, List, PlusCircle, Settings, LogOut, Repeat, Bell, ChevronRight, Wallet, Target, History, BarChart2, FileText, Receipt, Users, Plus } from 'lucide-react'
+import { Home, List, PlusCircle, Settings, LogOut, Repeat, Bell, ChevronRight, Wallet, Target, History, BarChart2, FileText, Receipt, Users, Plus, TrendingUp } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { useTransactions } from '../context/TransactionContext'
 
@@ -18,6 +18,7 @@ const Sidebar = ({ activeTab, setActiveTab, onOpenNotifications, unreadNotificat
         { id: 'transactions', label: 'History', icon: List },
         { id: 'activity_log', label: 'operation log', icon: History },
         { id: 'goals', label: 'Targets', icon: Target },
+        { id: 'simulation', label: 'Simulation', icon: TrendingUp },
         { id: 'subscriptions', label: 'Subscription', icon: Repeat },
         { id: 'analytics', label: 'Insight', icon: BarChart2 },
         { id: 'reports', label: 'Report', icon: FileText },
