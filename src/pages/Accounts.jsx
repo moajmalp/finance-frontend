@@ -11,8 +11,12 @@ import Dropdown from '../components/ui/Dropdown'
 import Calendar from '../components/ui/Calendar'
 import PrivacyValue from '../components/ui/PrivacyValue'
 import ConfirmationModal from '../components/ui/ConfirmationModal'
+import { useMockLoading } from '../hooks/useMockLoading'
+import toast from 'react-hot-toast'
+import { GridSkeleton } from '../skeletons/GridSkeleton'
 
 const Accounts = () => {
+    const isLoading = useMockLoading()
     const { accounts, addTransfer, netWorthDelta, liabilities, addAccount, calculateBalance, currencySymbol } = useTransactions()
 
     const [isTransferModalOpen, setIsTransferModalOpen] = useState(false)
@@ -52,10 +56,12 @@ const Accounts = () => {
             title: 'Verify Transfer',
             message: `Are you sure you want to transfer ${currencySymbol}${transferData.amount} from ${fromName} to ${toName}?`,
             type: 'primary',
-            onConfirm: () => {
-                addTransfer(transferData.fromId, transferData.toId, parseFloat(transferData.amount), transferData.date)
+            onConfirm: async () => {
+                await addTransfer(transferData.fromId, transferData.toId, parseFloat(transferData.amount), transferData.date)
                 setIsTransferModalOpen(false)
+                setIsConfirmModalOpen(false)
                 setTransferData({ fromId: '', toId: '', amount: '', date: new Date().toISOString().split('T')[0] })
+                toast.success('Transfer complete')
             }
         })
         setIsConfirmModalOpen(true)
@@ -69,10 +75,12 @@ const Accounts = () => {
             title: 'Confirm New Vault',
             message: `Do you want to establish "${newAccount.name}" as a new financial vault with an initial balance of ${currencySymbol}${newAccount.initialBalance}?`,
             type: 'primary',
-            onConfirm: () => {
-                addAccount(newAccount)
+            onConfirm: async () => {
+                await addAccount(newAccount)
                 setIsAddModalOpen(false)
+                setIsConfirmModalOpen(false)
                 setNewAccount({ name: '', type: 'bank', initialBalance: '', color: 'bg-indigo-500' })
+                toast.success('Vault created')
             }
         })
         setIsConfirmModalOpen(true)
@@ -81,6 +89,8 @@ const Accounts = () => {
     const totalNetWorth = useMemo(() =>
         accounts.reduce((acc, curr) => acc + calculateBalance(curr.id), 0)
         , [accounts, calculateBalance])
+
+    if (isLoading) return <GridSkeleton />
 
     const colors = [
         { name: 'Indigo', value: 'bg-indigo-500' },
@@ -155,12 +165,23 @@ const Accounts = () => {
             {/* Accounts Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <AnimatePresence mode="popLayout">
+                    {accounts.length === 0 && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="col-span-full py-12 text-center border-2 border-dashed border-border/50 rounded-[2rem]"
+                        >
+                            <p className="text-muted-foreground font-medium">No vaults found. Create one to get started.</p>
+                        </motion.div>
+                    )}
                     {accounts.map((acc, i) => {
-                        const Icon = getIcon(acc.type)
+                        if (!acc) return null;
+                        const Icon = getIcon(acc.type || 'bank')
                         const balance = calculateBalance(acc.id)
                         return (
                             <motion.div
-                                key={acc.id}
+                                key={acc.id || i}
                                 layout
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
@@ -169,12 +190,12 @@ const Accounts = () => {
                             >
                                 <Card className="hover:shadow-premium hover:-translate-y-1.5 hover:scale-[1.01] transition-all duration-500 cursor-pointer group h-full flex flex-col border-border/40 dark:border-white/5">
                                     <div className="flex items-start justify-between">
-                                        <div className={cn("p-4 rounded-2xl text-white shadow-lg group-hover:rotate-6 transition-transform duration-500", acc.color)}>
+                                        <div className={cn("p-4 rounded-2xl text-white shadow-lg group-hover:rotate-6 transition-transform duration-500", acc.color || 'bg-gray-500')}>
                                             <Icon size={24} />
                                         </div>
                                         <div className="text-right">
-                                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{acc.type.replace('_', ' ')}</p>
-                                            <h3 className="text-lg font-black text-foreground mt-1">{acc.name}</h3>
+                                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{(acc.type || 'unknown').replace('_', ' ')}</p>
+                                            <h3 className="text-lg font-black text-foreground mt-1">{acc.name || 'Unnamed Vault'}</h3>
                                         </div>
                                     </div>
                                     <div className="mt-8 flex-1">
@@ -183,12 +204,6 @@ const Accounts = () => {
                                             <PrivacyValue>{currencySymbol}</PrivacyValue>
                                             <PrivacyValue>{balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}</PrivacyValue>
                                         </div>
-                                    </div>
-                                    <div className="mt-6 pt-6 border-t border-border/50 flex items-center justify-between">
-                                        <div className="h-1.5 flex-1 bg-muted dark:bg-slate-800 rounded-full overflow-hidden mr-4">
-                                            <div className={cn("h-full opacity-60", acc.color)} style={{ width: '65%' }} />
-                                        </div>
-                                        <p className="text-[10px] font-black text-muted-foreground">FLUIDITY: 65%</p>
                                     </div>
                                 </Card>
                             </motion.div>

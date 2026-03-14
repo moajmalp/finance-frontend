@@ -4,24 +4,49 @@ import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import { useTransactions } from '../context/TransactionContext'
 import { motion, AnimatePresence } from 'framer-motion'
+import api from '../services/api'
 
 const Reports = () => {
     const { transactions, accounts, selectedMonth, currencySymbol } = useTransactions()
     const [generating, setGenerating] = useState(null)
     const [lastExport, setLastExport] = useState(null)
 
-    const handleExport = (type) => {
-        setGenerating(type)
-        // Simulate generation time
-        setTimeout(() => {
-            setGenerating(null)
+    const handleExport = async (type) => {
+        try {
+            setGenerating(type)
+            const month = selectedMonth
+
+            let blob
+            let filename
+
+            if (type === 'PDF') {
+                blob = await api.downloadMonthlyPdf(month)
+                filename = `Finance_Report_${month.replace('-', '_')}.pdf`
+            } else {
+                blob = await api.downloadTransactionsExcel(month)
+                filename = `Finance_Transactions_${month.replace('-', '_')}.xlsx`
+            }
+
+            const url = window.URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = url
+            link.setAttribute('download', filename)
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+            window.URL.revokeObjectURL(url)
+
             setLastExport({
                 id: Date.now(),
                 type,
-                name: `Finance_Report_${selectedMonth.replace('-', '_')}.${type === 'PDF' ? 'pdf' : 'xlsx'}`,
+                name: filename,
                 date: new Date().toLocaleTimeString()
             })
-        }, 2000)
+        } catch (e) {
+            console.error('Failed to generate report', e)
+        } finally {
+            setGenerating(null)
+        }
     }
 
     const reportTypes = [
@@ -114,7 +139,11 @@ const Reports = () => {
                         </div>
                         <div className="flex items-center gap-4">
                             <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Ready at {lastExport.date}</p>
-                            <Button className="gap-2 px-6 shadow-xl">
+                            <Button
+                                className="gap-2 px-6 shadow-xl"
+                                onClick={() => handleExport(lastExport.type)}
+                                disabled={generating !== null}
+                            >
                                 <Download size={18} />
                                 Download File
                             </Button>

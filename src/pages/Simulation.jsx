@@ -23,7 +23,7 @@ const Simulation = () => {
     // Generate Chart Data
     const data = useMemo(() => {
         const months = ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug']
-        let currentWealth = balance || 25000 // Start with current balance or default
+        let currentWealth = balance ?? 0
         let simulatedWealth = currentWealth
 
         return months.map((month, index) => {
@@ -38,7 +38,7 @@ const Simulation = () => {
 
             simulatedWealth += (BASE_MONTHLY_SAVINGS + monthlyRefinement)
 
-            // Add compound interest effect (mock 0.5% monthly)
+            // Compound interest assumption: 0.5% monthly (6% annual)
             if (index > 0) simulatedWealth *= 1.005
 
             return {
