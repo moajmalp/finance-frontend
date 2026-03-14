@@ -11,9 +11,14 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '../lib/utils'
 import PrivacyValue from '../components/ui/PrivacyValue'
 import ConfirmationModal from '../components/ui/ConfirmationModal'
+import { useMockLoading } from '../hooks/useMockLoading'
+import toast from 'react-hot-toast'
+import { GridSkeleton } from '../skeletons/GridSkeleton'
 
 const Goals = () => {
-    const { goals, addGoal, deleteGoal, updateGoalProgress, accounts, calculateBalance, currencySymbol } = useTransactions()
+    const isLoading = useMockLoading()
+    const { goals, addGoal, deleteGoal, updateGoal, accounts, calculateBalance, currencySymbol } = useTransactions()
+
     const [isAddModalOpen, setIsAddModalOpen] = useState(false)
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
     const [confirmAction, setConfirmAction] = useState({ title: '', message: '', onConfirm: () => { } })
@@ -33,13 +38,16 @@ const Goals = () => {
             title: 'Confirm Strategic Target',
             message: `Establish "${newGoal.name}" as a long-term objective with a target of ${currencySymbol}${newGoal.targetAmount}?`,
             type: 'primary',
-            onConfirm: () => {
-                addGoal({
+            onConfirm: async () => {
+                await addGoal({
                     ...newGoal,
-                    targetAmount: parseFloat(newGoal.targetAmount)
+                    targetAmount: parseFloat(newGoal.targetAmount),
+                    deadline: newGoal.targetDate
                 })
                 setIsAddModalOpen(false)
+                setIsConfirmModalOpen(false)
                 setNewGoal({ name: '', targetAmount: '', targetDate: '', accountId: accounts[0]?.id || '', icon: 'Target' })
+                toast.success('Target established')
             }
         })
         setIsConfirmModalOpen(true)
@@ -50,8 +58,10 @@ const Goals = () => {
             title: 'Terminate Objective',
             message: `Are you sure you want to delete the "${goal.name}" target? All progress data will be permanently cleared.`,
             type: 'danger',
-            onConfirm: () => {
-                deleteGoal(goal.id)
+            onConfirm: async () => {
+                await deleteGoal(goal.id)
+                toast.success('Target terminated')
+                setIsConfirmModalOpen(false)
             }
         })
         setIsConfirmModalOpen(true)
@@ -67,6 +77,8 @@ const Goals = () => {
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
         return diffDays > 0 ? diffDays : 0
     }
+
+    if (isLoading) return <GridSkeleton />
 
     return (
         <div className="space-y-10 animate-in fade-in slide-in-from-bottom-5 duration-700 pb-10">
@@ -84,10 +96,10 @@ const Goals = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 <AnimatePresence mode="popLayout">
                     {goals.map((goal, i) => {
-                        const currentAmount = goal.currentAmount || 0
-                        const targetAmount = goal.targetAmount || 0
+                        const currentAmount = goal.current_amount || 0
+                        const targetAmount = goal.target_amount || 0
                         const percent = Math.min((currentAmount / (targetAmount || 1)) * 100, 100)
-                        const daysLeft = calculateDaysLeft(goal.targetDate)
+                        const daysLeft = calculateDaysLeft(goal.deadline)
 
                         return (
                             <motion.div
@@ -115,7 +127,7 @@ const Goals = () => {
                                         <div>
                                             <h4 className="text-xl font-black text-foreground tracking-tight leading-tight">{goal.name}</h4>
                                             <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mt-1.5 opacity-80">
-                                                {accounts.find(a => a.id === goal.accountId)?.name || 'General Savings Vault'}
+                                                {accounts.find(a => a.id === goal.account_id)?.name || 'General Savings Vault'}
                                             </p>
                                         </div>
 

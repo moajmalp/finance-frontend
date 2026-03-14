@@ -11,9 +11,14 @@ import PrivacyValue from '../components/ui/PrivacyValue'
 import { cn } from '../lib/utils'
 import Calendar from '../components/ui/Calendar'
 import ConfirmationModal from '../components/ui/ConfirmationModal'
+import { useMockLoading } from '../hooks/useMockLoading'
+import toast from 'react-hot-toast'
+import { DashboardSkeleton } from '../skeletons/DashboardSkeleton'
 
 const Subscriptions = () => {
+    const isLoading = useMockLoading()
     const { subscriptions, addSubscription, deleteSubscription, accounts, categories, currencySymbol } = useTransactions()
+
     const [isAddModalOpen, setIsAddModalOpen] = useState(false)
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
     const [confirmAction, setConfirmAction] = useState({ title: '', message: '', onConfirm: () => { } })
@@ -27,11 +32,11 @@ const Subscriptions = () => {
     })
 
     const totalMonthly = (subscriptions || [])
-        .filter(s => s.active && s.frequency === 'monthly')
+        .filter(s => s.is_active && s.frequency === 'monthly')
         .reduce((sum, s) => sum + (parseFloat(s.amount) || 0), 0)
 
     const annualCost = (subscriptions || [])
-        .filter(s => s.active)
+        .filter(s => s.is_active)
         .reduce((sum, s) => {
             const amount = parseFloat(s.amount) || 0
             return sum + (s.frequency === 'monthly' ? amount * 12 : amount)
@@ -39,13 +44,13 @@ const Subscriptions = () => {
 
     const upcomingBills = subscriptions
         .filter(s => {
-            const billDate = new Date(s.nextBilling)
+            const billDate = new Date(s.next_billing)
             const today = new Date()
             const diffTime = billDate - today
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
             return diffDays >= 0 && diffDays <= 7
         })
-        .sort((a, b) => new Date(a.nextBilling) - new Date(b.nextBilling))
+        .sort((a, b) => new Date(a.next_billing) - new Date(b.next_billing))
 
     const handleAdd = (e) => {
         e.preventDefault()
@@ -55,12 +60,13 @@ const Subscriptions = () => {
             title: 'Confirm Operation Activation',
             message: `Do you want to activate the "${newSub.name}" subscription at ${currencySymbol}${newSub.amount}/${newSub.frequency}?`,
             type: 'primary',
-            onConfirm: () => {
-                addSubscription({
+            onConfirm: async () => {
+                await addSubscription({
                     ...newSub,
                     amount: parseFloat(newSub.amount)
                 })
                 setIsAddModalOpen(false)
+                setIsConfirmModalOpen(false)
                 setNewSub({
                     name: '',
                     amount: '',
@@ -69,6 +75,7 @@ const Subscriptions = () => {
                     accountId: accounts[0]?.id || '',
                     nextBilling: new Date().toISOString().split('T')[0]
                 })
+                toast.success('Subscription activated')
             }
         })
         setIsConfirmModalOpen(true)
@@ -79,12 +86,16 @@ const Subscriptions = () => {
             title: 'Deactivate Subscription',
             message: `Are you sure you want to remove "${sub.name}" from your recurring operations? This will stop future billing predictions.`,
             type: 'danger',
-            onConfirm: () => {
-                deleteSubscription(sub.id)
+            onConfirm: async () => {
+                await deleteSubscription(sub.id)
+                toast.success('Subscription deactivated')
+                setIsConfirmModalOpen(false)
             }
         })
         setIsConfirmModalOpen(true)
     }
+
+    if (isLoading) return <DashboardSkeleton />
 
     return (
         <div className="space-y-10 animate-in fade-in slide-in-from-bottom-5 duration-700 pb-10">
@@ -137,7 +148,7 @@ const Subscriptions = () => {
                             <div key={i} className="flex items-center justify-between">
                                 <div>
                                     <p className="text-xs font-black text-foreground">{bill.name}</p>
-                                    <p className="text-[9px] font-bold text-muted-foreground uppercase">{new Date(bill.nextBilling).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</p>
+                                    <p className="text-[9px] font-bold text-muted-foreground uppercase">{new Date(bill.next_billing).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</p>
                                 </div>
                                 <p className="text-xs font-black text-amber-500">{currencySymbol}{bill.amount}</p>
                             </div>
@@ -176,7 +187,7 @@ const Subscriptions = () => {
                                     <PrivacyValue>{currencySymbol}</PrivacyValue>
                                     <PrivacyValue>{sub.amount.toLocaleString()}</PrivacyValue>
                                 </h4>
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase mt-0.5">Due {new Date(sub.nextBilling).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</p>
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase mt-0.5">Due {new Date(sub.next_billing).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</p>
                             </div>
                             <div className="flex items-center gap-4 pt-6 sm:pt-0 border-t sm:border-t-0 border-border/50">
                                 <button

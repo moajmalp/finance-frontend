@@ -14,17 +14,19 @@ import Analytics from './pages/Analytics'
 import Reports from './pages/Reports'
 import Profile from './pages/Profile'
 import Simulation from './pages/Simulation'
-import NotificationCenter from './components/NotificationCenter'
+import Notifications from './pages/Notifications'
 import { TransactionProvider, useTransactions } from './context/TransactionContext'
+import { AuthProvider, useAuth } from './context/AuthContext'
 import { useTheme } from './context/ThemeContext'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Home, List, PlusCircle, Settings, Wallet, Repeat, Target, History, BarChart2, FileText, Users, TrendingUp } from 'lucide-react'
 
 function AppContent() {
-  const { isAuthenticated, alerts, isPrivacyMode, setIsPrivacyMode } = useTransactions()
+  const { isPrivacyMode, setIsPrivacyMode, alerts } = useTransactions()
+  const { isAuthenticated } = useAuth()
   const { toggleTheme } = useTheme()
+
   const [activeTab, setActiveTab] = useState('dashboard')
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
 
   // Global Shortcut: Ctrl + Space (Privacy) | Shift + Space (Theme)
   useEffect(() => {
@@ -96,6 +98,8 @@ function AppContent() {
         return <Profile />
       case 'settings':
         return <SettingsPage />
+      case 'notifications':
+        return <Notifications />
       default:
         return <Dashboard />
     }
@@ -117,14 +121,10 @@ function AppContent() {
     <RootLayout
       activeTab={activeTab}
       setActiveTab={setActiveTab}
-      onOpenNotifications={() => setIsNotificationsOpen(true)}
+      onOpenNotifications={() => setActiveTab('notifications')}
       unreadNotifications={alerts.filter(a => !a.read).length}
       navItems={navItems}
     >
-      <NotificationCenter
-        isOpen={isNotificationsOpen}
-        onClose={() => setIsNotificationsOpen(false)}
-      />
       <AnimatePresence mode="wait">
         <motion.div
           key={activeTab}
@@ -140,11 +140,16 @@ function AppContent() {
   )
 }
 
+import { Toaster } from 'react-hot-toast'
+
 function App() {
   return (
-    <TransactionProvider>
-      <AppContent />
-    </TransactionProvider>
+    <AuthProvider>
+      <TransactionProvider>
+        <AppContent />
+        <Toaster position="top-right" reverseOrder={false} />
+      </TransactionProvider>
+    </AuthProvider>
   )
 }
 

@@ -5,15 +5,19 @@ import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 import Dropdown from '../components/ui/Dropdown'
 import Calendar from '../components/ui/Calendar'
-import Toast from '../components/ui/Toast'
 import { useTransactions } from '../context/TransactionContext'
 import ConfirmationModal from '../components/ui/ConfirmationModal'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '../lib/utils'
-import PrivacyValue from '../components/ui/PrivacyValue'
+import { useMockLoading } from '../hooks/useMockLoading'
+import { FormSkeleton } from '../skeletons/FormSkeleton'
+import toast from 'react-hot-toast'
+import api from '../services/api'
 
 const AddTransaction = ({ onSuccess }) => {
+    const isLoading = useMockLoading()
     const { addTransaction, addSubscription, categories, accounts, calculateBalance, currencySymbol, subscriptionKeywords } = useTransactions()
+
     const fileInputRef = useRef(null)
     const [formData, setFormData] = useState({
         amount: '',
@@ -28,8 +32,8 @@ const AddTransaction = ({ onSuccess }) => {
         receiptUrl: null
     })
     const [errors, setErrors] = useState({})
-    const [toast, setToast] = useState({ isOpen: false, message: '' })
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
+    const [isSubmitting, setIsSubmitting] = useState(false)
 
     // Subscription Detection State
     const [isSubscriptionDetected, setIsSubscriptionDetected] = useState(false)
@@ -40,28 +44,7 @@ const AddTransaction = ({ onSuccess }) => {
     const [scanSuccess, setScanSuccess] = useState(false)
 
     const handleScanReceipt = () => {
-        setIsScanning(true)
-        // Simulate OCR delay
-        setTimeout(() => {
-            setIsScanning(false)
-            setScanSuccess(true)
-
-            // Auto-fill Mock Data
-            setFormData(prev => ({
-                ...prev,
-                amount: '4850.00',
-                note: 'Team Lunch at Grill House',
-                category: 'Food',
-                date: new Date().toISOString().split('T')[0],
-                // Use a placeholder image if none selected, or keep current
-                receiptUrl: prev.receiptUrl || 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&q=80&w=300'
-            }))
-
-            setToast({ isOpen: true, message: 'Receipt Scanned & Data Extracted' })
-
-            // Reset success flash after a moment
-            setTimeout(() => setScanSuccess(false), 2000)
-        }, 1500)
+        fileInputRef.current.click()
     }
 
     const handleNoteChange = (e) => {
@@ -73,9 +56,6 @@ const AddTransaction = ({ onSuccess }) => {
         )
         setIsSubscriptionDetected(hasKeyword)
 
-        // Reset checkbox if keyword is removed, or keep it? 
-        // User flow: "type Netflix" -> box appears. 
-        // If they backspace, box should probably disappear.
         if (!hasKeyword) {
             setCreateSubscription(false)
         }
@@ -103,11 +83,35 @@ const AddTransaction = ({ onSuccess }) => {
         return Object.keys(newErrors).length === 0
     }
 
-    const handleFileChange = (e) => {
+    const handleFileChange = async (e) => {
         const file = e.target.files[0]
         if (file) {
             const url = URL.createObjectURL(file)
-            setFormData({ ...formData, receiptUrl: url })
+            setFormData(prev => ({ ...prev, receiptUrl: url }))
+
+            setIsScanning(true)
+            try {
+                const data = await api.scanReceipt(file)
+
+                setFormData(prev => ({
+                    ...prev,
+                    amount: data.amount ? String(data.amount) : prev.amount,
+                    date: data.date || prev.date,
+                    // Map category if it exists in our categories, else maybe Default or Other?
+                    // For now, just try to set it. Alternatively, check if valid.
+                    category: data.category || prev.category,
+                    note: data.merchant || prev.note
+                }))
+
+                setScanSuccess(true)
+                toast.success('Receipt Scanned Successfully!')
+                setTimeout(() => setScanSuccess(false), 3000)
+            } catch (error) {
+                console.error("Scan failed:", error)
+                toast.error("Failed to analyze receipt")
+            } finally {
+                setIsScanning(false)
+            }
         }
     }
 
@@ -118,35 +122,48 @@ const AddTransaction = ({ onSuccess }) => {
         }
     }
 
-    const confirmSubmit = () => {
-        // 1. Add Transaction
-        addTransaction({
-            ...formData,
-            amount: Number(formData.amount),
-            splitAmount: formData.isSplit ? Number(formData.splitAmount) : undefined
-        })
+    const confirmSubmit = async () => {
+        setIsSubmitting(true)
+        setIsConfirmModalOpen(false)
 
-        // 2. Add Subscription if detected and checked
-        if (isSubscriptionDetected && createSubscription) {
-            const nextDueDate = new Date()
-            nextDueDate.setDate(nextDueDate.getDate() + 30)
-
-            addSubscription({
-                name: formData.note || 'New Subscription',
+        const mainTask = async () => {
+            // 1. Add Transaction
+            await addTransaction({
+                ...formData,
                 amount: Number(formData.amount),
-                category: formData.category,
-                accountId: formData.accountId,
-                frequency: 'monthly',
-                nextBilling: nextDueDate.toISOString(),
-                active: true
+                splitAmount: formData.isSplit ? Number(formData.splitAmount) : undefined
             })
+
+            // 2. Add Subscription if detected and checked
+            if (isSubscriptionDetected && createSubscription) {
+                const nextDueDate = new Date()
+                nextDueDate.setDate(nextDueDate.getDate() + 30)
+
+                await addSubscription({
+                    name: formData.note || 'New Subscription',
+                    amount: Number(formData.amount),
+                    category: formData.category,
+                    accountId: formData.accountId,
+                    frequency: 'monthly',
+                    nextBilling: nextDueDate.toISOString(),
+                    active: true
+                })
+            }
         }
 
-        setToast({ isOpen: true, message: 'Transaction saved successfully' })
-        setTimeout(() => {
-            onSuccess()
-        }, 1500)
+        toast.promise(mainTask(), {
+            loading: 'Recording operation...',
+            success: () => {
+                setTimeout(onSuccess, 500)
+                return 'Transaction committed successfully'
+            },
+            error: (err) => `Failed to record: ${err.response?.data?.detail || 'Unknown error'}`,
+        })
+
+        setIsSubmitting(false)
     }
+
+    if (isLoading) return <FormSkeleton />
 
     return (
         <div className="max-w-xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-5 duration-700 pb-10">
@@ -401,11 +418,6 @@ const AddTransaction = ({ onSuccess }) => {
                 type="primary"
             />
 
-            <Toast
-                isOpen={toast.isOpen}
-                message={toast.message}
-                onClose={() => setToast({ ...toast, isOpen: false })}
-            />
         </div>
     )
 }

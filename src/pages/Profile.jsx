@@ -1,16 +1,26 @@
 import React, { useState, useRef } from 'react'
-import { User, Mail, Shield, Bell, Globe, Camera, ChevronRight, Check, Key, LogOut, Lock, UserCog } from 'lucide-react'
+import { User, Mail, Shield, Bell, Globe, Camera, ChevronRight, Check, Key, LogOut, Lock, UserCog, Phone, MapPin, Edit2, Save, X, FileText } from 'lucide-react'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import Modal from '../components/ui/Modal'
 import Input from '../components/ui/Input'
-import { useTransactions } from '../context/TransactionContext'
+import { useAuth } from '../context/AuthContext'
 import { motion } from 'framer-motion'
 import ConfirmationModal from '../components/ui/ConfirmationModal'
 import { cn } from '../lib/utils'
 
+const FormItem = ({ label, icon: Icon, children, fullWidth }) => (
+    <div className={cn("space-y-3", fullWidth ? "col-span-1 md:col-span-2" : "")}>
+        <div className="flex items-center gap-2">
+            <Icon size={14} className="text-primary" />
+            <label className="text-xs font-black uppercase tracking-wider text-muted-foreground">{label}</label>
+        </div>
+        {children}
+    </div>
+)
+
 const Profile = () => {
-    const { user, logout, updateUserCredentials, updateUserProfile } = useTransactions()
+    const { user, logout, updateUserCredentials, updateUserProfile } = useAuth()
     const fileInputRef = React.useRef(null)
     const [showLogoutConfirm, setShowLogoutConfirm] = React.useState(false)
     const [showSecurityModal, setShowSecurityModal] = React.useState(false)
@@ -18,6 +28,33 @@ const Profile = () => {
     const [securityForm, setSecurityForm] = React.useState({ username: '', password: '', confirmPassword: '' })
     const [error, setError] = React.useState('')
 
+    // Basic Info State
+    const [isEditingProfile, setIsEditingProfile] = useState(false)
+    const [profileForm, setProfileForm] = useState({
+        full_name: user?.full_name || '',
+        email: user?.email || '',
+        phone: user?.phone || '',
+        location: user?.location || '',
+        bio: user?.bio || ''
+    })
+
+    // Update form when user data changes
+    React.useEffect(() => {
+        if (user) {
+            setProfileForm({
+                full_name: user.full_name || '',
+                email: user.email || '',
+                phone: user.phone || '',
+                location: user.location || '',
+                bio: user.bio || ''
+            })
+        }
+    }, [user])
+
+    const handleProfileUpdate = async () => {
+        const success = await updateUserProfile(profileForm)
+        if (success) setIsEditingProfile(false)
+    }
     const handleSecurityUpdate = (e) => {
         e.preventDefault()
         if (securityForm.password !== securityForm.confirmPassword) {
@@ -31,12 +68,14 @@ const Profile = () => {
         setIsConfirmModalOpen(true)
     }
 
-    const confirmSecurityUpdate = () => {
-        updateUserCredentials(securityForm.username, securityForm.password)
-        setShowSecurityModal(false)
-        setIsConfirmModalOpen(false)
-        setSecurityForm({ username: '', password: '', confirmPassword: '' })
-        setError('')
+    const confirmSecurityUpdate = async () => {
+        const success = await updateUserCredentials(securityForm.username, securityForm.password)
+        if (success) {
+            setShowSecurityModal(false)
+            setIsConfirmModalOpen(false)
+            setSecurityForm({ username: '', password: '', confirmPassword: '' })
+            setError('')
+        }
     }
 
     const handlePhotoChange = (e) => {
@@ -106,11 +145,7 @@ const Profile = () => {
                                 onChange={handlePhotoChange}
                             />
                             <div className="h-40 w-40 rounded-[3rem] bg-primary flex items-center justify-center text-white text-5xl font-black shadow-glow transition-transform group-active:scale-95 duration-500 overflow-hidden relative">
-                                {user?.profileImage ? (
-                                    <img src={user.profileImage} alt="Profile" className="h-full w-full object-cover" />
-                                ) : (
-                                    user?.name?.charAt(0) || 'U'
-                                )}
+                                {user?.full_name?.charAt(0) || user?.username?.charAt(0) || 'U'}
                                 <div className="absolute inset-0 bg-gradient-to-tr from-black/20 to-transparent" />
                             </div>
                             <button
@@ -122,7 +157,7 @@ const Profile = () => {
                         </div>
 
                         <div>
-                            <h3 className="text-2xl font-black text-foreground tracking-tight">{user?.name || 'Power User'}</h3>
+                            <h3 className="text-2xl font-black text-foreground tracking-tight">{user?.full_name || user?.username || 'Power User'}</h3>
                             <div className="flex items-center justify-center gap-2 mt-2">
                                 <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                                 <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Authorized Access</p>
@@ -132,7 +167,7 @@ const Profile = () => {
                         <div className="w-full space-y-3 pt-6 border-t border-border">
                             <div className="flex items-center gap-3 text-sm font-bold text-muted-foreground bg-card-muted/50 p-4 rounded-2xl border border-transparent">
                                 <Mail size={16} className="text-primary" />
-                                <span className="truncate">{user?.email || 'demo@finance-os.ai'}</span>
+                                <span className="truncate">{user?.email || 'No email set'}</span>
                             </div>
                         </div>
 
@@ -188,6 +223,111 @@ const Profile = () => {
 
                 {/* Right Column - Remaining Settings Sections */}
                 <div className="lg:col-span-2 space-y-6">
+                    {/* Basic Information Card */}
+                    <Card className="p-0 overflow-hidden border-none shadow-premium glass">
+                        <div className="p-6 border-b border-border bg-card-muted/30 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-xl bg-background text-primary shadow-sm">
+                                    <User size={18} />
+                                </div>
+                                <h4 className="text-sm font-black uppercase tracking-widest text-foreground">Basic Information</h4>
+                            </div>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => isEditingProfile ? handleProfileUpdate() : setIsEditingProfile(true)}
+                                className={cn(
+                                    "h-8 px-3 rounded-lg font-bold text-[10px] uppercase tracking-wider flex items-center gap-2 transition-all",
+                                    isEditingProfile
+                                        ? "bg-primary text-white shadow-lg shadow-primary/20 hover:bg-primary/90"
+                                        : "bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-foreground"
+                                )}
+                            >
+                                {isEditingProfile ? (
+                                    <>
+                                        <Save size={14} />
+                                        Save Changes
+                                    </>
+                                ) : (
+                                    <>
+                                        <Edit2 size={14} />
+                                        Edit Details
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+
+                        <div className="p-6 space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <FormItem label="Full Name" icon={User}>
+                                    {isEditingProfile ? (
+                                        <Input
+                                            value={profileForm.full_name}
+                                            onChange={(e) => setProfileForm({ ...profileForm, full_name: e.target.value })}
+                                            className="h-10 bg-background/50 border-white/5 focus:border-primary/50"
+                                            placeholder="Your Name"
+                                        />
+                                    ) : (
+                                        <p className="font-bold text-foreground text-sm">{user?.full_name || 'Not set'}</p>
+                                    )}
+                                </FormItem>
+
+                                <FormItem label="Email Address" icon={Mail}>
+                                    {isEditingProfile ? (
+                                        <Input
+                                            value={profileForm.email}
+                                            onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
+                                            className="h-10 bg-background/50 border-white/5 focus:border-primary/50"
+                                            placeholder="email@example.com"
+                                        />
+                                    ) : (
+                                        <p className="font-bold text-foreground text-sm">{user?.email || 'Not set'}</p>
+                                    )}
+                                </FormItem>
+
+                                <FormItem label="Phone Number" icon={Phone}>
+                                    {isEditingProfile ? (
+                                        <Input
+                                            value={profileForm.phone}
+                                            onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                                            className="h-10 bg-background/50 border-white/5 focus:border-primary/50"
+                                            placeholder="+1 (555) 000-0000"
+                                        />
+                                    ) : (
+                                        <p className="font-bold text-foreground text-sm">{user?.phone || 'Not set'}</p>
+                                    )}
+                                </FormItem>
+
+                                <FormItem label="Location" icon={MapPin}>
+                                    {isEditingProfile ? (
+                                        <Input
+                                            value={profileForm.location}
+                                            onChange={(e) => setProfileForm({ ...profileForm, location: e.target.value })}
+                                            className="h-10 bg-background/50 border-white/5 focus:border-primary/50"
+                                            placeholder="City, Country"
+                                        />
+                                    ) : (
+                                        <p className="font-bold text-foreground text-sm">{user?.location || 'Not set'}</p>
+                                    )}
+                                </FormItem>
+                            </div>
+
+                            <FormItem label="Bio / Notes" icon={FileText} fullWidth>
+                                {isEditingProfile ? (
+                                    <textarea
+                                        value={profileForm.bio}
+                                        onChange={(e) => setProfileForm({ ...profileForm, bio: e.target.value })}
+                                        className="w-full min-h-[80px] rounded-xl bg-background/50 border border-white/5 p-3 text-sm font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50 resize-none"
+                                        placeholder="Add a short bio..."
+                                    />
+                                ) : (
+                                    <p className="font-medium text-muted-foreground text-sm leading-relaxed">
+                                        {user?.bio || 'No bio added yet.'}
+                                    </p>
+                                )}
+                            </FormItem>
+                        </div>
+                    </Card>
                     {sections.filter(s => s.title !== 'Notifications').map((section, idx) => (
                         <Card key={idx} className="p-0 overflow-hidden border-none shadow-premium glass">
                             <div className="p-6 border-b border-border bg-card-muted/30 flex items-center gap-3">

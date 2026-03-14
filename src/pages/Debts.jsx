@@ -11,9 +11,14 @@ import PrivacyValue from '../components/ui/PrivacyValue'
 import { cn } from '../lib/utils'
 import Calendar from '../components/ui/Calendar'
 import ConfirmationModal from '../components/ui/ConfirmationModal'
+import { useMockLoading } from '../hooks/useMockLoading'
+import toast from 'react-hot-toast'
+import { DashboardSkeleton } from '../skeletons/DashboardSkeleton'
 
 const Debts = () => {
+    const isLoading = useMockLoading()
     const { debts, addDebt, settleDebt, deleteDebt, currencySymbol } = useTransactions()
+
     const [isAddModalOpen, setIsAddModalOpen] = useState(false)
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
     const [confirmAction, setConfirmAction] = useState({ title: '', message: '', onConfirm: () => { } })
@@ -25,8 +30,8 @@ const Debts = () => {
         note: ''
     })
 
-    const totalOwedToMe = (debts || []).filter(d => !d.settled && d.type === 'owed_to_me').reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0)
-    const totalIOwe = (debts || []).filter(d => !d.settled && d.type === 'i_owe').reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0)
+    const totalOwedToMe = (debts || []).filter(d => !d.is_settled && d.type === 'owed_to_me').reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0)
+    const totalIOwe = (debts || []).filter(d => !d.is_settled && d.type === 'i_owe').reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0)
 
     const handleAdd = (e) => {
         e.preventDefault()
@@ -36,12 +41,13 @@ const Debts = () => {
             title: 'Verify Capital Entry',
             message: `Do you want to record a ${currencySymbol}${newDebt.amount} ${newDebt.type === 'owed_to_me' ? 'receivable from' : 'payable to'} ${newDebt.person}?`,
             type: 'primary',
-            onConfirm: () => {
-                addDebt({
+            onConfirm: async () => {
+                await addDebt({
                     ...newDebt,
                     amount: parseFloat(newDebt.amount)
                 })
                 setIsAddModalOpen(false)
+                setIsConfirmModalOpen(false)
                 setNewDebt({
                     person: '',
                     amount: '',
@@ -49,6 +55,7 @@ const Debts = () => {
                     date: new Date().toISOString().split('T')[0],
                     note: ''
                 })
+                toast.success('Debt record added')
             }
         })
         setIsConfirmModalOpen(true)
@@ -57,10 +64,12 @@ const Debts = () => {
     const handleSettleClick = (debt) => {
         setConfirmAction({
             title: 'Reconciliation Check',
-            message: `Confirm that total settlement of ${currencySymbol}${debt.amount} has been ${debt.type === 'owed_to_me' ? 'received from' : 'paid to'} ${debt.person}.`,
+            message: `Confirm that total settlement of ${currencySymbol}${debt.amount} has been ${debt.type === 'owed_to_me' ? 'received from' : 'paid to'} ${debt.person_name}.`,
             type: 'primary',
-            onConfirm: () => {
-                settleDebt(debt.id)
+            onConfirm: async () => {
+                await settleDebt(debt.id)
+                toast.success('Debt settled')
+                setIsConfirmModalOpen(false)
             }
         })
         setIsConfirmModalOpen(true)
@@ -69,14 +78,18 @@ const Debts = () => {
     const handleDelete = (debt) => {
         setConfirmAction({
             title: 'Expunge Record',
-            message: `Are you sure you want to permanently delete this record with ${debt.person}? This action cannot be undone.`,
+            message: `Are you sure you want to permanently delete this record with ${debt.person_name}? This action cannot be undone.`,
             type: 'danger',
-            onConfirm: () => {
-                deleteDebt(debt.id)
+            onConfirm: async () => {
+                await deleteDebt(debt.id)
+                toast.success('Debt record deleted')
+                setIsConfirmModalOpen(false)
             }
         })
         setIsConfirmModalOpen(true)
     }
+
+    if (isLoading) return <DashboardSkeleton />
 
     return (
         <div className="space-y-10 animate-in fade-in slide-in-from-bottom-5 duration-700 pb-10">
@@ -129,12 +142,12 @@ const Debts = () => {
             <div className="space-y-4">
                 <div className="flex items-center justify-between px-2">
                     <h3 className="text-lg font-black text-foreground tracking-tight">Pending Reconciliation</h3>
-                    <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{debts.filter(d => !d.settled).length} Active Records</span>
+                    <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{debts.filter(d => !d.is_settled).length} Active Records</span>
                 </div>
 
                 <div className="grid grid-cols-1 gap-4">
                     <AnimatePresence mode="popLayout">
-                        {debts.filter(d => !d.settled).map((debt, i) => (
+                        {debts.filter(d => !d.is_settled).map((debt, i) => (
                             <motion.div
                                 key={debt.id}
                                 layout
@@ -152,7 +165,7 @@ const Debts = () => {
                                             <Users size={28} />
                                         </div>
                                         <div>
-                                            <h4 className="text-xl font-black text-foreground tracking-tight">{debt.person}</h4>
+                                            <h4 className="text-xl font-black text-foreground tracking-tight">{debt.person_name}</h4>
                                             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">{debt.note || 'No description provided'}</p>
                                         </div>
                                     </div>
@@ -167,7 +180,7 @@ const Debts = () => {
                                                 <PrivacyValue>{currencySymbol}</PrivacyValue>
                                                 <PrivacyValue>{debt.amount.toLocaleString()}</PrivacyValue>
                                             </h4>
-                                            <p className="text-[10px] font-bold text-muted-foreground uppercase mt-0.5">{new Date(debt.date).toLocaleDateString()}</p>
+                                            <p className="text-[10px] font-bold text-muted-foreground uppercase mt-0.5">{new Date(debt.due_date).toLocaleDateString()}</p>
                                         </div>
                                         <div className="flex gap-2">
                                             <button
@@ -197,10 +210,10 @@ const Debts = () => {
             <div className="space-y-4 pt-10">
                 <h3 className="text-lg font-black text-muted-foreground tracking-tight px-2">Recently Settled</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {debts.filter(d => d.settled).slice(0, 6).map((debt, i) => (
+                    {debts.filter(d => d.is_settled).slice(0, 6).map((debt, i) => (
                         <Card key={debt.id} className="p-6 border-none shadow-premium rounded-[2rem] opacity-60 grayscale hover:grayscale-0 hover:opacity-100 transition-all">
                             <div className="flex items-center justify-between mb-4">
-                                <h5 className="font-black text-foreground text-sm tracking-tight">{debt.person}</h5>
+                                <h5 className="font-black text-foreground text-sm tracking-tight">{debt.person_name}</h5>
                                 <div className="flex items-center gap-2">
                                     <button
                                         onClick={() => handleDelete(debt)}

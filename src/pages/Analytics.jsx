@@ -5,7 +5,7 @@ import { TrendingUp, TrendingDown, PieChart as PieIcon, LineChart, Calendar, Che
 import { motion } from 'framer-motion'
 
 const Analytics = () => {
-    const { transactions, categories, budgets, currencySymbol } = useTransactions()
+    const { transactions, categories, budgets, currencySymbol, subscriptions } = useTransactions()
 
     // Generate 6-month trend data
     const last6Months = Array.from({ length: 6 }).map((_, i) => {
@@ -41,6 +41,27 @@ const Analytics = () => {
         .sort((a, b) => b.value - a.value)
 
     const COLORS = ['var(--primary)', 'var(--emerald)', 'var(--amber)', 'var(--rose)', 'var(--indigo)', '#8b5cf6', '#ec4899', '#06b6d4']
+
+    // Derived from real data: sustainability based on savings rate
+    const avgIncome = trendData.length ? trendData.reduce((acc, d) => acc + d.income, 0) / trendData.length : 0
+    const avgExpense = trendData.length ? trendData.reduce((acc, d) => acc + d.expense, 0) / trendData.length : 0
+    const savingsRate = avgIncome > 0 ? Math.max(0, Math.min(100, ((avgIncome - avgExpense) / avgIncome) * 100)) : 0
+    const sustainabilityScore = Math.round(savingsRate)
+
+    // Days until next major billing (from subscriptions)
+    const daysUntilNextBilling = (() => {
+        if (!subscriptions?.length) return null
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        let nearest = null
+        subscriptions.filter(s => s.is_active).forEach(sub => {
+            const d = new Date(sub.next_billing)
+            d.setHours(0, 0, 0, 0)
+            const diff = Math.ceil((d - today) / (1000 * 60 * 60 * 24))
+            if (diff >= 0 && (nearest === null || diff < nearest)) nearest = diff
+        })
+        return nearest
+    })()
 
     return (
         <div className="space-y-10 animate-in fade-in slide-in-from-bottom-5 duration-700 pb-10">
@@ -149,19 +170,23 @@ const Analytics = () => {
                                 <TrendingUp size={24} />
                             </div>
                             <div>
-                                <p className="text-xs font-black text-foreground tracking-tight">Sustainability Score: 84/100</p>
-                                <p className="text-[10px] font-bold text-muted-foreground mt-0.5 leading-tight">Your income comfortably covers your recurring debt operations.</p>
+                                <p className="text-xs font-black text-foreground tracking-tight">Sustainability Score: {sustainabilityScore}/100</p>
+                                <p className="text-[10px] font-bold text-muted-foreground mt-0.5 leading-tight">
+                                    {sustainabilityScore >= 50 ? 'Your income comfortably covers your recurring operations.' : 'Consider reducing expenses or increasing income for better stability.'}
+                                </p>
                             </div>
                         </div>
-                        <div className="p-5 rounded-[1.5rem] bg-amber-500/5 border border-amber-500/10 flex items-center gap-4 group/item hover:bg-amber-500/10 transition-colors">
-                            <div className="h-12 w-12 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
-                                <Calendar size={24} />
+                        {daysUntilNextBilling !== null && (
+                            <div className="p-5 rounded-[1.5rem] bg-amber-500/5 border border-amber-500/10 flex items-center gap-4 group/item hover:bg-amber-500/10 transition-colors">
+                                <div className="h-12 w-12 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
+                                    <Calendar size={24} />
+                                </div>
+                                <div>
+                                    <p className="text-xs font-black text-foreground tracking-tight">Next Billing: {daysUntilNextBilling === 0 ? 'Today' : daysUntilNextBilling === 1 ? 'Tomorrow' : `${daysUntilNextBilling} days`}</p>
+                                    <p className="text-[10px] font-bold text-muted-foreground mt-0.5 leading-tight">Upcoming subscription or recurring billing.</p>
+                                </div>
                             </div>
-                            <div>
-                                <p className="text-xs font-black text-foreground tracking-tight">Large Burn Potential: ~12 Days</p>
-                                <p className="text-[10px] font-bold text-muted-foreground mt-0.5 leading-tight">Historical analysis indicates upcoming major billing cycles.</p>
-                            </div>
-                        </div>
+                        )}
                     </div>
                 </div>
             </Card>

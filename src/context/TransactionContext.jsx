@@ -1,71 +1,23 @@
 import { createContext, useContext, useState, useEffect, useMemo } from 'react'
-
-/**
- * @typedef {Object} Transaction
- * @property {string|number} id
- * @property {'income'|'expense'|'transfer'} type
- * @property {string} category
- * @property {number} amount
- * @property {string} accountId
- * @property {string} date - ISO 8601 Format
- * @property {string} [note]
- * @property {string} [transferId] - Linked ID for double-entry transfers
- * @property {string} [receiptUrl] - Mock URL for receipt images
- * @property {boolean} [isSplit]
- */
-
-/**
- * @typedef {Object} Account
- * @property {string} id
- * @property {string} name
- * @property {'bank'|'cash'|'credit_card'|'vault'} type
- * @property {number} initialBalance
- * @property {string} color
- */
-
-/**
- * @typedef {Object} Subscription
- * @property {string} id
- * @property {string} name
- * @property {number} amount
- * @property {'monthly'|'yearly'} frequency
- * @property {string} category
- * @property {string} accountId
- * @property {string} nextBilling - ISO Date
- * @property {boolean} active
- */
-
-/**
- * @typedef {Object} Debt
- * @property {string} id
- * @property {string} person
- * @property {number} amount
- * @property {'owed_to_me'|'i_owe'} type
- * @property {string} date - ISO Date
- * @property {string} [note]
- * @property {boolean} settled
- */
+import api from '../services/api'
+import { useAuth } from './AuthContext'
+import toast from 'react-hot-toast'
 
 const TransactionContext = createContext()
 
 export const useTransactions = () => useContext(TransactionContext)
 
 const STORAGE_KEYS = {
-    TRANSACTIONS: 'finance_transactions_v2',
-    ACCOUNTS: 'finance_accounts_v2',
-    CATEGORIES: 'finance_categories_v2',
-    BUDGETS: 'finance_budgets_v2',
-    SUBSCRIPTIONS: 'finance_subscriptions_v2',
-    DEBTS: 'finance_debts_v2',
+    // Legacy keys kept for settings/auth
     ALERTS: 'finance_alerts_v2',
     AUTH: 'finance_auth_v2',
-    GOALS: 'finance_goals_v2',
     LOGS: 'finance_logs_v2',
     PRIVACY: 'finance_privacy_mode',
     CURRENCY: 'finance_currency',
-    CURRENCY: 'finance_currency',
     TIMEZONE: 'finance_timezone',
-    SUB_KEYWORDS: 'finance_sub_keywords_v2'
+    SUB_KEYWORDS: 'finance_sub_keywords_v2',
+    CATEGORIES: 'finance_categories_v2',
+    BUDGETS: 'finance_budgets_v2'
 }
 
 
@@ -79,12 +31,6 @@ const getSafeStorage = (key, defaultValue) => {
     }
 }
 
-const DEFAULT_ACCOUNTS = [
-    { id: 'acc_1', name: 'Main Bank', type: 'bank', initialBalance: 5000, color: 'bg-indigo-500' },
-    { id: 'acc_2', name: 'Cash Wallet', type: 'cash', initialBalance: 200, color: 'bg-emerald-500' },
-    { id: 'acc_3', name: 'Credit Card', type: 'credit_card', initialBalance: 0, color: 'bg-rose-500' }
-]
-
 const DEFAULT_CATEGORIES = {
     expense: ['Food', 'Rent', 'Transport', 'Entertainment', 'Shopping', 'Health', 'Bills', 'Subscriptions', 'Other'],
     income: ['Salary', 'Freelance', 'Investment', 'Gift', 'Other']
@@ -94,34 +40,34 @@ const DEFAULT_SUB_KEYWORDS = ['Netflix', 'Spotify', 'Youtube', 'Prime', 'Hotstar
 
 export const TransactionProvider = ({ children }) => {
     // Persistent State initialization
-    const [transactions, setTransactions] = useState(() => getSafeStorage(STORAGE_KEYS.TRANSACTIONS, []))
-    const [accounts, setAccounts] = useState(() => getSafeStorage(STORAGE_KEYS.ACCOUNTS, DEFAULT_ACCOUNTS))
-    const [categories, setCategories] = useState(() => getSafeStorage(STORAGE_KEYS.CATEGORIES, DEFAULT_CATEGORIES))
+    const [transactions, setTransactions] = useState([])
+    const [accounts, setAccounts] = useState([])
+    const [categories, setCategories] = useState(DEFAULT_CATEGORIES)
     const [budgets, setBudgets] = useState(() => getSafeStorage(STORAGE_KEYS.BUDGETS, {}))
-    const [subscriptions, setSubscriptions] = useState(() => getSafeStorage(STORAGE_KEYS.SUBSCRIPTIONS, []))
-    const [debts, setDebts] = useState(() => getSafeStorage(STORAGE_KEYS.DEBTS, []))
+    const [subscriptions, setSubscriptions] = useState([])
+    const [debts, setDebts] = useState([])
     const [alerts, setAlerts] = useState(() => getSafeStorage(STORAGE_KEYS.ALERTS, []))
     const [isPrivacyMode, setIsPrivacyMode] = useState(() => getSafeStorage(STORAGE_KEYS.PRIVACY, false))
-    const [currency, setCurrency] = useState(() => getSafeStorage(STORAGE_KEYS.CURRENCY, 'INR'))
-    const [timezone, setTimezone] = useState(() => getSafeStorage(STORAGE_KEYS.TIMEZONE, Intl.DateTimeFormat().resolvedOptions().timeZone))
-    const [subscriptionKeywords, setSubscriptionKeywords] = useState(() => getSafeStorage(STORAGE_KEYS.SUB_KEYWORDS, DEFAULT_SUB_KEYWORDS))
+    const [currency, setCurrency] = useState('USD')
+    const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone)
+    const [subscriptionKeywords, setSubscriptionKeywords] = useState(DEFAULT_SUB_KEYWORDS)
+    const [goals, setGoals] = useState([])
+
+    // Budget alert control flags
+    const [enableBudgetAlerts, setEnableBudgetAlerts] = useState(true)
+    const [enableEmailBudgetAlerts, setEnableEmailBudgetAlerts] = useState(false)
+
+    // Track which categories have already fired alerts for the current month
+    const [budgetAlertState, setBudgetAlertState] = useState({})
+
+    // Track bill reminders sent per day (subscriptions, debts, goals)
+    const [billReminderState, setBillReminderState] = useState({})
 
     const currencySymbol = useMemo(() => currency === 'INR' ? '₹' : '$', [currency])
 
-    const [authData, setAuthData] = useState(() => {
-        const defaultAuth = {
-            isAuthenticated: false,
-            user: null,
-            credentials: { username: 'demo', password: 'demo123' }
-        }
-        const saved = getSafeStorage(STORAGE_KEYS.AUTH, defaultAuth)
-        return { ...defaultAuth, ...saved }
-    })
 
-    const isAuthenticated = authData.isAuthenticated
-    const user = authData.user
+    const { isAuthenticated, user, updateUserCredentials = () => Promise.resolve(false), updateUserProfile = () => Promise.resolve(false) } = useAuth()
 
-    const [goals, setGoals] = useState(() => getSafeStorage(STORAGE_KEYS.GOALS, []))
     const [activityLog, setActivityLog] = useState(() => getSafeStorage(STORAGE_KEYS.LOGS, []))
     const [insights, setInsights] = useState([])
     const [lastDeleted, setLastDeleted] = useState(null)
@@ -138,13 +84,56 @@ export const TransactionProvider = ({ children }) => {
         setActivityLog(prev => [newLog, ...prev])
     }
 
+    // Initial Data Fetch
+    useEffect(() => {
+        if (!isAuthenticated) {
+            // Clear data if not authenticated
+            setAccounts([])
+            setTransactions([])
+            setSubscriptions([])
+            setDebts([])
+            setGoals([])
+            return
+        }
+
+        const loadData = async () => {
+            try {
+                const [vaultsData, txData, subsData, debtsData, goalsData, configData] = await Promise.all([
+                    api.fetchVaults(),
+                    api.fetchTransactions(),
+                    api.fetchActiveSubscriptions(),
+                    api.fetchPendingDebts(),
+                    api.fetchGoals(),
+                    api.fetchUserConfig()
+                ])
+
+                setAccounts(vaultsData)
+                setTransactions(txData)
+                setSubscriptions(subsData)
+                setDebts(debtsData)
+                setGoals(goalsData)
+
+                if (configData) {
+                    setCurrency(configData.currency || 'USD')
+                    setTimezone(configData.timezone || 'UTC')
+                    setIsPrivacyMode(configData.is_privacy_mode || false)
+                    if (configData.categories) setCategories(configData.categories)
+                    if (configData.subscription_keywords) setSubscriptionKeywords(configData.subscription_keywords)
+                }
+            } catch (error) {
+                console.error("Failed to fetch initial data:", error)
+            }
+        }
+        loadData()
+    }, [isAuthenticated])
+
     // Dynamic Balance Calculation
     const calculateBalance = (accountId) => {
         const account = accounts.find(acc => acc.id === accountId)
         if (!account) return 0
 
         const netTransactions = transactions
-            .filter(t => t.accountId === accountId)
+            .filter(t => t.account_id === accountId)
             .reduce((sum, t) => {
                 const amount = parseFloat(t.amount) || 0
                 if (t.type === 'income') return sum + amount
@@ -152,7 +141,8 @@ export const TransactionProvider = ({ children }) => {
                 return sum
             }, 0)
 
-        return (parseFloat(account.initialBalance) || 0) + netTransactions
+        // snake_case initial_balance
+        return (parseFloat(account.initial_balance) || 0) + netTransactions
     }
 
     // Totals calculation using dynamic balances
@@ -185,142 +175,440 @@ export const TransactionProvider = ({ children }) => {
         }
     }, [transactions, accounts, selectedMonth])
 
-    // Sync to LocalStorage
+    // Sync UI prefs to LocalStorage
     useEffect(() => {
-        localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(transactions))
-        localStorage.setItem(STORAGE_KEYS.ACCOUNTS, JSON.stringify(accounts))
         localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories))
         localStorage.setItem(STORAGE_KEYS.BUDGETS, JSON.stringify(budgets))
-        localStorage.setItem(STORAGE_KEYS.SUBSCRIPTIONS, JSON.stringify(subscriptions))
-        localStorage.setItem(STORAGE_KEYS.DEBTS, JSON.stringify(debts))
         localStorage.setItem(STORAGE_KEYS.ALERTS, JSON.stringify(alerts))
-        localStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify(goals))
         localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(activityLog))
-        localStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(authData))
         localStorage.setItem(STORAGE_KEYS.PRIVACY, JSON.stringify(isPrivacyMode))
-        localStorage.setItem(STORAGE_KEYS.CURRENCY, JSON.stringify(currency))
         localStorage.setItem(STORAGE_KEYS.CURRENCY, JSON.stringify(currency))
         localStorage.setItem(STORAGE_KEYS.TIMEZONE, JSON.stringify(timezone))
         localStorage.setItem(STORAGE_KEYS.SUB_KEYWORDS, JSON.stringify(subscriptionKeywords))
-    }, [transactions, accounts, categories, budgets, subscriptions, debts, alerts, goals, activityLog, authData, isPrivacyMode, currency, timezone, subscriptionKeywords])
+    }, [categories, budgets, alerts, activityLog, isPrivacyMode, currency, timezone, subscriptionKeywords])
+
+    // Reset budget alert state when month changes
+    useEffect(() => {
+        setBudgetAlertState({})
+    }, [selectedMonth])
+
+    // Budget alert watcher
+    useEffect(() => {
+        if (!enableBudgetAlerts) return
+        if (!transactions.length) return
+
+        const currentMonthTransactions = transactions.filter(t => t.date && t.date.startsWith(selectedMonth))
+
+        const byCategory = currentMonthTransactions.reduce((acc, t) => {
+            const cat = t.category || 'Uncategorized'
+            const amount = parseFloat(t.amount) || 0
+            if (!acc[cat]) acc[cat] = 0
+            if (t.type === 'expense') {
+                acc[cat] += amount
+            }
+            return acc
+        }, {})
+
+        Object.entries(budgets).forEach(([category, limit]) => {
+            const numericLimit = parseFloat(limit)
+            if (!numericLimit || numericLimit <= 0) return
+
+            const spent = byCategory[category] || 0
+            if (spent <= 0) return
+
+            const utilization = spent / numericLimit
+
+            const stateKey = `${selectedMonth}:${category}`
+            const state = budgetAlertState[stateKey] || { approaching: false, exceeded: false }
+
+            // Approaching threshold (e.g. 80%)
+            if (utilization >= 0.8 && utilization < 1 && !state.approaching) {
+                const message = `You're approaching your ${category} budget: ${currencySymbol}${spent.toFixed(2)} of ${currencySymbol}${numericLimit.toFixed(2)}`
+                addAlert(message, 'warning')
+                toast((t) => (
+                    <div className="text-sm">
+                        <div className="font-bold mb-1">Budget Approaching</div>
+                        <div>{message}</div>
+                    </div>
+                ), { id: `budget-${stateKey}-approaching` })
+
+                setBudgetAlertState(prev => ({
+                    ...prev,
+                    [stateKey]: { ...prev[stateKey], approaching: true }
+                }))
+
+                if (enableEmailBudgetAlerts && isAuthenticated && user?.email) {
+                    // Fire and forget; errors are logged in api layer or console
+                    api.sendBudgetAlertEmail?.({
+                        category,
+                        month: selectedMonth,
+                        spent,
+                        limit: numericLimit,
+                        level: 'approaching'
+                    }).catch(() => { })
+                }
+            }
+
+            // Exceeded threshold
+            if (utilization >= 1 && !state.exceeded) {
+                const message = `You've exceeded your ${category} budget: ${currencySymbol}${spent.toFixed(2)} of ${currencySymbol}${numericLimit.toFixed(2)}`
+                addAlert(message, 'danger')
+                toast.error(message, { id: `budget-${stateKey}-exceeded` })
+
+                setBudgetAlertState(prev => ({
+                    ...prev,
+                    [stateKey]: { ...prev[stateKey], exceeded: true }
+                }))
+
+                if (enableEmailBudgetAlerts && isAuthenticated && user?.email) {
+                    api.sendBudgetAlertEmail?.({
+                        category,
+                        month: selectedMonth,
+                        spent,
+                        limit: numericLimit,
+                        level: 'exceeded'
+                    }).catch(() => { })
+                }
+            }
+        })
+    }, [transactions, budgets, selectedMonth, enableBudgetAlerts, enableEmailBudgetAlerts, currencySymbol, budgetAlertState, isAuthenticated, user])
+
+    // Bill reminders: subscriptions (next_billing), debts (due_date), goals (deadline)
+    useEffect(() => {
+        if (!subscriptions.length && !debts.length && !goals.length) return
+
+        const today = new Date()
+        const todayStr = today.toISOString().split('T')[0]
+        const todayMidnight = new Date(todayStr)
+        const msPerDay = 1000 * 60 * 60 * 24
+
+        const getDiffDays = (dateStr) => {
+            if (!dateStr) return null
+            const target = new Date(dateStr)
+            if (Number.isNaN(target.getTime())) return null
+            const diff = (target - todayMidnight) / msPerDay
+            return Math.round(diff)
+        }
+
+        const maybeNotify = (key, message, severity = 'info') => {
+            const stateKey = `${todayStr}:${key}`
+            if (billReminderState[stateKey]) return
+
+            addAlert(message, severity)
+            if (severity === 'danger') {
+                toast.error(message)
+            } else {
+                toast(message)
+            }
+
+            setBillReminderState(prev => ({
+                ...prev,
+                [stateKey]: true
+            }))
+        }
+
+        // Upcoming subscription renewals
+        subscriptions.forEach(sub => {
+            if (!sub.is_active) return
+            const diffDays = getDiffDays(sub.next_billing)
+            if (diffDays === null) return
+            if (diffDays < 0 || diffDays > 7) return
+
+            let descriptor = ''
+            let severity = 'info'
+            if (diffDays === 0) {
+                descriptor = 'today'
+                severity = 'danger'
+            } else if (diffDays === 1) {
+                descriptor = 'tomorrow'
+                severity = 'warning'
+            } else {
+                descriptor = `in ${diffDays} days`
+            }
+
+            const message = `Subscription ${sub.name} (${currencySymbol}${parseFloat(sub.amount || 0).toFixed(2)}) is due ${descriptor}.`
+            maybeNotify(`sub:${sub.id}`, message, severity)
+        })
+
+        // Upcoming debt due dates (only pending debts)
+        debts.forEach(debt => {
+            if (debt.is_settled) return
+            const diffDays = getDiffDays(debt.due_date)
+            if (diffDays === null) return
+            if (diffDays < 0 || diffDays > 7) return
+
+            let descriptor = ''
+            let severity = 'info'
+            if (diffDays === 0) {
+                descriptor = 'today'
+                severity = 'danger'
+            } else if (diffDays === 1) {
+                descriptor = 'tomorrow'
+                severity = 'warning'
+            } else {
+                descriptor = `in ${diffDays} days`
+            }
+
+            const message = `Debt with ${debt.person_name} (${currencySymbol}${parseFloat(debt.amount || 0).toFixed(2)}) is due ${descriptor}.`
+            maybeNotify(`debt:${debt.id}`, message, severity)
+        })
+
+        // Upcoming goal deadlines
+        goals.forEach(goal => {
+            if (!goal.deadline) return
+            const diffDays = getDiffDays(goal.deadline)
+            if (diffDays === null) return
+            if (diffDays < 0 || diffDays > 7) return
+
+            let descriptor = ''
+            let severity = 'info'
+            if (diffDays === 0) {
+                descriptor = 'today'
+                severity = 'danger'
+            } else if (diffDays === 1) {
+                descriptor = 'tomorrow'
+                severity = 'warning'
+            } else {
+                descriptor = `in ${diffDays} days`
+            }
+
+            const message = `Goal "${goal.name}" deadline is ${descriptor}.`
+            maybeNotify(`goal:${goal.id}`, message, severity)
+        })
+    }, [subscriptions, debts, goals, currencySymbol, billReminderState])
 
     // Actions
-    const addAccount = (account) => {
-        setAccounts(prev => [...prev, { ...account, id: `acc_${Date.now()}`, initialBalance: parseFloat(account.initialBalance) || 0 }])
-        logActivity('Account Created', `New vault: ${account.name}`)
+    const addAccount = async (account) => {
+        const payload = {
+            name: account.name,
+            type: account.type,
+            initial_balance: parseFloat(account.initialBalance || account.initial_balance),
+            color: account.color,
+            fluidity_score: 0.65
+        }
+        const newVault = await api.createVault(payload)
+        setAccounts(prev => [...prev, newVault]) // Ideally refetch or update state
+        logActivity('Account Created', `New vault: ${newVault.name}`)
+        toast.success(`Vault '${newVault.name}' created`)
+        return newVault
     }
 
-    const addTransaction = (transaction) => {
-        const newTransaction = {
-            ...transaction,
-            id: Date.now(),
-            date: transaction.date || new Date().toISOString()
+    const deleteAccount = async (id) => {
+        try {
+            await api.deleteVault(id)
+            setAccounts(prev => prev.filter(a => a.id !== id))
+            logActivity('Vault Decommissioned', `Vault removed from system`)
+        } catch (e) {
+            console.error("Failed to delete vault", e)
         }
-        setTransactions(prev => [newTransaction, ...prev])
+    }
+
+    const addTransaction = async (transaction) => {
+        const payload = {
+            amount: parseFloat(transaction.amount),
+            type: transaction.type,
+            category: transaction.category,
+            account_id: transaction.accountId || transaction.account_id,
+            date: transaction.date,
+            note: transaction.note,
+            is_split: transaction.isSplit || false,
+            split_amount: transaction.splitAmount || null,
+            split_with: transaction.splitWith || null,
+            receipt_url: transaction.receiptUrl || null
+        }
+        const newTx = await api.createTransaction(payload)
+        setTransactions(prev => [newTx, ...prev])
 
         logActivity(
-            transaction.type === 'income' ? 'Income Received' : 'Expense Logged',
-            `${transaction.category}: ${currencySymbol}${transaction.amount}`
+            newTx.type === 'income' ? 'Income Received' : 'Expense Logged',
+            `${newTx.category}: ${currencySymbol}${newTx.amount}`
         )
 
-        // Split Bill Logic
-        if (transaction.isSplit && transaction.splitAmount) {
-            addDebt({
-                person: transaction.splitWith || 'Someone',
-                amount: transaction.splitAmount,
+        if (payload.is_split && payload.split_amount) {
+            await addDebt({
+                person_name: payload.split_with || 'Someone',
+                amount: payload.split_amount,
                 type: 'owed_to_me',
-                date: newTransaction.date,
-                note: `Split for ${transaction.category}`
+                note: `Split for ${payload.category}`,
+                transaction_id: newTx.id
             })
         }
+        return newTx
     }
 
     // Double-Entry Transfers
-    const addTransfer = (fromId, toId, amount, date) => {
-        const transferId = `tr_${Date.now()}`
-        const isoDate = date ? new Date(date).toISOString() : new Date().toISOString()
-
-        const outTransaction = {
-            id: `${transferId}_out`,
-            transferId,
-            type: 'expense',
-            category: 'Transfer',
-            amount,
-            accountId: fromId,
-            date: isoDate,
-            note: 'Outbound Transfer'
+    const addTransfer = async (fromId, toId, amount, date) => {
+        const isoDate = date ? new Date(date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+        try {
+            // Out
+            await addTransaction({
+                amount: parseFloat(amount),
+                type: 'expense',
+                category: 'Transfer',
+                accountId: fromId,
+                date: isoDate,
+                note: 'Outbound Transfer'
+            })
+            // In
+            await addTransaction({
+                amount: parseFloat(amount),
+                type: 'income',
+                category: 'Transfer',
+                accountId: toId,
+                date: isoDate,
+                note: 'Inbound Transfer'
+            })
+            logActivity('Internal Transfer', `${currencySymbol}${amount} moved between vaults`)
+        } catch (e) {
+            console.error("Transfer failed", e)
         }
+    }
 
-        const inTransaction = {
-            id: `${transferId}_in`,
-            transferId,
-            type: 'income',
-            category: 'Transfer',
-            amount,
-            accountId: toId,
-            date: isoDate,
-            note: 'Inbound Transfer'
+    const addSubscription = async (sub) => {
+        try {
+            const payload = {
+                name: sub.name,
+                amount: parseFloat(sub.amount),
+                frequency: sub.frequency,
+                category: sub.category,
+                account_id: sub.accountId || sub.account_id,
+                next_billing: sub.nextBilling || sub.next_billing,
+                auto_renewal: sub.autoRenewal || true,
+                is_active: sub.active !== undefined ? sub.active : true
+            }
+            const newSub = await api.createSubscription(payload)
+            setSubscriptions(prev => [...prev, newSub])
+            logActivity('Subscription Added', `${newSub.name}: ${currencySymbol}${newSub.amount}/${newSub.frequency}`)
+        } catch (e) {
+            console.error("Failed to add subscription", e)
         }
-
-        setTransactions(prev => [outTransaction, inTransaction, ...prev])
-        logActivity('Internal Transfer', `${currencySymbol}${amount} moved between vaults`)
     }
 
-    const addSubscription = (sub) => {
-        setSubscriptions(prev => [...prev, { ...sub, id: `sub_${Date.now()}`, active: true }])
-        logActivity('Subscription Added', `${sub.name}: ${currencySymbol}${sub.amount}/${sub.frequency}`)
+    const deleteSubscription = async (id) => {
+        try {
+            await api.deleteSubscription(id)
+            setSubscriptions(prev => prev.filter(s => s.id !== id))
+            logActivity('Subscription Deleted', `Subscription removed from registry`)
+        } catch (e) {
+            console.error("Failed to delete subscription", e)
+        }
     }
 
-    const deleteSubscription = (id) => {
-        const sub = subscriptions.find(s => s.id === id)
-        setSubscriptions(prev => prev.filter(s => s.id !== id))
-        if (sub) logActivity('Subscription Deleted', `${sub.name} removed from registry`)
+    const addDebt = async (debt) => {
+        try {
+            const payload = {
+                person_name: debt.person || debt.person_name,
+                amount: parseFloat(debt.amount),
+                type: debt.type,
+                due_date: debt.date || debt.due_date,
+                is_settled: false,
+                note: debt.note || '',
+                transaction_id: debt.transaction_id || null
+            }
+            const newDebt = await api.createDebt(payload)
+            setDebts(prev => [...prev, newDebt])
+            logActivity('Debt Recorded', `${newDebt.person_name}: ${currencySymbol}${newDebt.amount}`)
+        } catch (e) {
+            console.error("Failed to add debt", e)
+        }
     }
 
-    const addDebt = (debt) => {
-        setDebts(prev => [...prev, { ...debt, id: `debt_${Date.now()}`, settled: false }])
-        logActivity('Debt Recorded', `${debt.person}: ${currencySymbol}${debt.amount}`)
+    const deleteDebt = async (id) => {
+        try {
+            await api.deleteDebt(id)
+            setDebts(prev => prev.filter(d => d.id !== id))
+            logActivity('Debt Deleted', `Debt record cleared`)
+        } catch (e) {
+            console.error("Failed to delete debt", e)
+        }
     }
 
-    const deleteDebt = (id) => {
-        const debt = debts.find(d => d.id === id)
-        setDebts(prev => prev.filter(d => d.id !== id))
-        if (debt) logActivity('Debt Deleted', `Record with ${debt.person} cleared`)
+    const settleDebt = async (id) => {
+        try {
+            await api.updateDebt(id, { is_settled: true })
+            setDebts(prev => prev.map(d => d.id === id ? { ...d, is_settled: true } : d))
+            logActivity('Debt Settled', 'Repayment confirmed')
+        } catch (e) {
+            console.error("Failed to settle debt", e)
+        }
     }
 
-    const settleDebt = (id) => {
-        setDebts(prev => prev.map(d => d.id === id ? { ...d, settled: true } : d))
-        logActivity('Debt Settled', 'Repayment confirmed')
-    }
-
-    const deleteTransaction = (id) => {
-        const transaction = transactions.find(t => t.id === id)
-        if (!transaction) return
-
-        // If it's a transfer, delete both entries
-        if (transaction.transferId) {
-            setTransactions(prev => prev.filter(t => t.transferId !== transaction.transferId))
-        } else {
+    const deleteTransaction = async (id) => {
+        try {
+            await api.deleteTransaction(id)
             setTransactions(prev => prev.filter(t => t.id !== id))
+            logActivity('Transaction Deleted', `Record removed`)
+            // Logic for Last Deleted if needed for undo... difficult with API but can cache locally
+        } catch (e) {
+            console.error("Failed to delete transaction", e)
         }
-
-        logActivity('Transaction Deleted', `${transaction.category}: ${currencySymbol}${transaction.amount}`)
-        setLastDeleted(transaction)
     }
 
     const undoDelete = () => {
-        if (!lastDeleted) return
-        if (lastDeleted.transferId) {
-            // Restore both if it was a transfer
-            // (Note: Simplified for mock, ideally we'd find and restore both)
-            addTransaction(lastDeleted)
-        } else {
-            addTransaction(lastDeleted)
-        }
-        setLastDeleted(null)
+        // Undo implementation with API is complex - requires restoring deleted ID? 
+        // Or re-creating. For now, leave empty or alert unavailable.
+        alert("Undo not yet implemented with live API")
     }
 
-    // Forecasting Logic
+    const updateTransaction = async (id, updatedData) => {
+        try {
+            // UpdatedData keys need to match backend snake_case
+            // Map common camelCase to snake_case if necessary
+            const payload = { ...updatedData }
+            if (payload.accountId) { payload.account_id = payload.accountId; delete payload.accountId }
+            if (payload.receiptUrl) { payload.receipt_url = payload.receiptUrl; delete payload.receiptUrl }
+
+            const updated = await api.updateTransaction(id, payload)
+            setTransactions(prev => prev.map(t => t.id === id ? updated : t))
+            logActivity('Transaction Updated', `Modifications applied`)
+        } catch (e) {
+            console.error("Failed to update transaction", e)
+        }
+    }
+
+    // Goal Actions
+    const addGoal = async (goal) => {
+        const payload = {
+            name: goal.name,
+            target_amount: parseFloat(goal.targetAmount || goal.target_amount),
+            current_amount: parseFloat(goal.currentAmount || goal.current_amount || 0),
+            deadline: goal.deadline,
+            account_id: goal.accountId || goal.account_id,
+            icon: goal.icon || 'Target'
+        }
+        const newGoal = await api.createGoal(payload)
+        setGoals(prev => [...prev, newGoal])
+        logActivity('Goal Set', `New target: ${newGoal.name}`)
+        toast.success(`Goal '${newGoal.name}' set`)
+        return newGoal
+    }
+
+    const deleteGoal = async (id) => {
+        try {
+            await api.deleteGoal(id)
+            setGoals(prev => prev.filter(g => g.id !== id))
+            logActivity('Goal Deleted', 'Milestone removed')
+        } catch (e) {
+            console.error("Failed to delete goal", e)
+        }
+    }
+
+    const updateGoal = async (id, updatedData) => {
+        try {
+            const payload = { ...updatedData }
+            // Mapping
+            if (payload.targetAmount) { payload.target_amount = payload.targetAmount; delete payload.targetAmount }
+            if (payload.currentAmount) { payload.current_amount = payload.currentAmount; delete payload.currentAmount }
+            if (payload.accountId) { payload.account_id = payload.accountId; delete payload.accountId }
+
+            const result = await api.updateGoal(id, payload)
+            setGoals(prev => prev.map(g => g.id === id ? result : g))
+        } catch (e) {
+            console.error("Failed to update goal", e)
+        }
+    }
+
+    // Forecasting Logic (Client-side mainly, using local state)
     const predictFutureBalance = (days = 30) => {
         let currentBal = totals.balance
         const forecast = []
@@ -331,11 +619,9 @@ export const TransactionProvider = ({ children }) => {
             date.setDate(today.getDate() + i)
             const dateStr = date.toISOString().split('T')[0]
 
-            // Apply subscriptions due on this date
             subscriptions.forEach(sub => {
-                if (!sub.active) return
-                // Simple logic: if billing date matches day of month (approx)
-                const billingDate = new Date(sub.nextBilling)
+                if (!sub.is_active) return
+                const billingDate = new Date(sub.next_billing)
                 if (billingDate.getDate() === date.getDate()) {
                     currentBal -= sub.amount
                 }
@@ -366,60 +652,27 @@ export const TransactionProvider = ({ children }) => {
         setAlerts([])
     }
 
-    const updateTransaction = (id, updatedData) => {
-        setTransactions(prev => prev.map(t => t.id === id ? { ...t, ...updatedData } : t))
-        logActivity('Transaction Updated', `Modifications applied to ${updatedData.category || 'record'}`)
-    }
-
-    const updateUserCredentials = (username, password) => {
-        setAuthData(prev => ({
-            ...prev,
-            credentials: { username, password }
-        }))
-        logActivity('Security Updated', 'Access credentials modified')
-    }
-
-    const updateUserProfile = (profileData) => {
-        setAuthData(prev => ({
-            ...prev,
-            user: { ...prev.user, ...profileData }
-        }))
-        logActivity('Profile Updated', 'Identity details modified')
-    }
-
-    const login = (username, password) => {
-        if (username === authData.credentials?.username && password === authData.credentials?.password) {
-            setAuthData(prev => ({
-                ...prev,
-                isAuthenticated: true,
-                user: prev.user || { id: 'u_1', name: 'Ajmal', email: 'ajmal@finance.os' }
-            }))
-            return true
-        }
-        return false
-    }
-
-    const logout = () => {
-        setAuthData(prev => ({ ...prev, isAuthenticated: false }))
-    }
-
-    const addGoal = (goal) => {
-        setGoals(prev => [...prev, { ...goal, id: `goal_${Date.now()}`, currentAmount: 0 }])
-    }
-
-    const deleteGoal = (id) => {
-        setGoals(prev => prev.filter(g => g.id !== id))
-    }
-
-    const updateGoalProgress = (id, amount) => {
-        setGoals(prev => prev.map(g => g.id === id ? { ...g, currentAmount: amount } : g))
-    }
-
     const addSubscriptionKeyword = (keyword) => {
         if (!subscriptionKeywords.includes(keyword)) {
             setSubscriptionKeywords(prev => [...prev, keyword])
             logActivity('Configuration Updated', `Added '${keyword}' to subscription detector`)
         }
+    }
+
+    const addCategory = (type, name) => {
+        setCategories(prev => ({
+            ...prev,
+            [type]: [...(prev[type] || []), name]
+        }))
+        logActivity('Configuration Updated', `New ${type} category: ${name}`)
+    }
+
+    const deleteCategory = (type, name) => {
+        setCategories(prev => ({
+            ...prev,
+            [type]: (prev[type] || []).filter(c => c !== name)
+        }))
+        logActivity('Configuration Updated', `Removed ${type} category: ${name}`)
     }
 
     const deleteSubscriptionKeyword = (keyword) => {
@@ -452,11 +705,7 @@ export const TransactionProvider = ({ children }) => {
             deleteTransaction,
             addTransfer,
             addAccount,
-            deleteAccount: (id) => {
-                const acc = accounts.find(a => a.id === id)
-                setAccounts(prev => prev.filter(a => a.id !== id))
-                if (acc) logActivity('Vault Decommissioned', `${acc.name} removed from system`)
-            },
+            deleteAccount,
             addSubscription,
             deleteSubscription,
             addDebt,
@@ -466,13 +715,11 @@ export const TransactionProvider = ({ children }) => {
             setBudget,
             markAlertRead,
             clearAlerts,
-            login,
-            logout,
             updateUserCredentials,
             updateUserProfile,
             addGoal,
             deleteGoal,
-            updateGoalProgress,
+            updateGoal,
             undoDelete,
             goals,
             activityLog,
@@ -480,10 +727,16 @@ export const TransactionProvider = ({ children }) => {
             isAuthenticated,
             user,
             setCategories,
+            addCategory,
+            deleteCategory,
             setAccounts,
             subscriptionKeywords,
             addSubscriptionKeyword,
-            deleteSubscriptionKeyword
+            deleteSubscriptionKeyword,
+            enableBudgetAlerts,
+            setEnableBudgetAlerts,
+            enableEmailBudgetAlerts,
+            setEnableEmailBudgetAlerts
         }}>
             {children}
         </TransactionContext.Provider>

@@ -1,18 +1,18 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { useTransactions } from '../context/TransactionContext'
+import { useAuth } from '../context/AuthContext'
 import { Lock, User, Mail, Check, Info, Eye, EyeOff } from 'lucide-react'
 import Button from '../components/ui/Button'
 
 const LoginPage = () => {
-    const { login } = useTransactions()
+    const { login } = useAuth()
     const [formData, setFormData] = useState({ username: '', password: '' })
     const [showPassword, setShowPassword] = useState(false)
     const [error, setError] = useState('')
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault()
-        const success = login(formData.username, formData.password)
+        const success = await login(formData.username, formData.password)
         if (!success) {
             setError('Invalid username or password')
         }
@@ -107,8 +107,8 @@ const LoginPage = () => {
 
                     <div className="mt-10 pt-6 border-t border-white/5 opacity-40">
                         <div className="flex flex-col items-center gap-1">
-                            <span className="text-[8px] font-black uppercase tracking-[0.2em]">Identity: demo</span>
-                            <span className="text-[8px] font-black uppercase tracking-[0.2em]">Key: demo123</span>
+                            <span className="text-[8px] font-black uppercase tracking-[0.2em]">Identity: ajmal</span>
+                            <span className="text-[8px] font-black uppercase tracking-[0.2em]">Key: Aju@10064</span>
                         </div>
                     </div>
                 </div>

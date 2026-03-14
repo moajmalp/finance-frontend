@@ -8,17 +8,21 @@ import EmptyState from '../components/ui/EmptyState'
 import { useTransactions } from '../context/TransactionContext'
 import { motion, AnimatePresence } from 'framer-motion'
 import EditTransactionModal from '../components/ui/EditTransactionModal'
-import Toast from '../components/ui/Toast'
+import toast from 'react-hot-toast'
 import Calendar from '../components/ui/Calendar'
 import { cn } from '../lib/utils'
 import PrivacyValue from '../components/ui/PrivacyValue'
+import { useMockLoading } from '../hooks/useMockLoading'
+import { ListSkeleton } from '../skeletons/ListSkeleton'
 
 const Transactions = () => {
+    const isLoading = useMockLoading()
     const { transactions, deleteTransaction, accounts, categories, undoDelete, currencySymbol } = useTransactions()
+
     const [search, setSearch] = useState('')
     const [viewMode, setViewMode] = useState('list') // 'list' or 'calendar'
     const [heatmapDate, setHeatmapDate] = useState(new Date())
-    const [isToastOpen, setIsToastOpen] = useState(false)
+    const [selectedCalendarDate, setSelectedCalendarDate] = useState(null)
     const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false)
     const [filters, setFilters] = useState({
         type: 'all',
@@ -39,12 +43,15 @@ const Transactions = () => {
     const [transactionToEdit, setTransactionToEdit] = useState(null)
 
     const filteredTransactions = transactions.filter(t => {
-        const matchesSearch = !search ||
-            t.category.toLowerCase().includes(search.toLowerCase()) ||
-            (t.note && t.note.toLowerCase().includes(search.toLowerCase()))
+        const searchTerm = search.trim().toLowerCase()
+
+        const matchesSearch = !searchTerm ||
+            (t.category && t.category.toLowerCase().includes(searchTerm)) ||
+            (t.note && t.note.toLowerCase().includes(searchTerm)) ||
+            (t.amount !== undefined && t.amount !== null && t.amount.toString().includes(searchTerm))
 
         const matchesType = filters.type === 'all' || t.type === filters.type
-        const matchesAccount = filters.accountId === 'all' || t.accountId === filters.accountId
+        const matchesAccount = filters.accountId === 'all' || t.account_id === filters.accountId
         const matchesDateStart = !filters.dateStart || t.date >= filters.dateStart
         const matchesDateEnd = !filters.dateEnd || t.date <= filters.dateEnd
         const matchesMinAmount = !filters.minAmount || t.amount >= parseFloat(filters.minAmount)
@@ -69,6 +76,60 @@ const Transactions = () => {
         setSearch('')
     }
 
+    // --- Cash Flow Calendar Helpers ---
+    const calendarMonthKey = `${heatmapDate.getFullYear()}-${String(heatmapDate.getMonth() + 1).padStart(2, '0')}`
+
+    const calendarTransactions = filteredTransactions.filter(t => t.date && t.date.startsWith(calendarMonthKey))
+
+    const dailyBuckets = calendarTransactions.reduce((acc, t) => {
+        const dayStr = t.date.slice(8, 10)
+        const day = parseInt(dayStr, 10)
+        if (!acc[day]) {
+            acc[day] = { income: 0, expense: 0, net: 0, transactions: [] }
+        }
+        const amount = parseFloat(t.amount) || 0
+        if (t.type === 'income') {
+            acc[day].income += amount
+            acc[day].net += amount
+        } else if (t.type === 'expense') {
+            acc[day].expense += amount
+            acc[day].net -= amount
+        }
+        acc[day].transactions.push(t)
+        return acc
+    }, {})
+
+    const maxAbsNet = Object.values(dailyBuckets).reduce((max, bucket) => {
+        const absNet = Math.abs(bucket.net)
+        return absNet > max ? absNet : max
+    }, 0)
+
+    const getDayIntensityClass = (day) => {
+        const bucket = dailyBuckets[day]
+        if (!bucket || maxAbsNet === 0) {
+            return 'bg-muted/40 border-dashed border-border/60 text-muted-foreground'
+        }
+        const absNet = Math.abs(bucket.net)
+        const ratio = absNet / maxAbsNet
+
+        let tone = ''
+        if (bucket.net >= 0) {
+            // Net positive cash flow
+            if (ratio < 0.33) tone = 'bg-emerald-500/10 border-emerald-500/40 text-emerald-500'
+            else if (ratio < 0.66) tone = 'bg-emerald-500/20 border-emerald-500/60 text-emerald-500'
+            else tone = 'bg-emerald-500/30 border-emerald-500 text-emerald-50'
+        } else {
+            // Net negative cash flow
+            if (ratio < 0.33) tone = 'bg-rose-500/10 border-rose-500/40 text-rose-500'
+            else if (ratio < 0.66) tone = 'bg-rose-500/20 border-rose-500/60 text-rose-500'
+            else tone = 'bg-rose-500/30 border-rose-500 text-rose-50'
+        }
+        return tone
+    }
+
+    const getMonthLabel = (date) =>
+        date.toLocaleString('default', { month: 'long', year: 'numeric' })
+
     const handleDeleteClick = (transaction) => {
         setTransactionToDelete(transaction)
         setIsDeleteModalOpen(true)
@@ -79,11 +140,12 @@ const Transactions = () => {
         setIsEditModalOpen(true)
     }
 
-    const confirmDelete = () => {
+    const confirmDelete = async () => {
         if (transactionToDelete) {
-            deleteTransaction(transactionToDelete.id)
+            await deleteTransaction(transactionToDelete.id)
             setTransactionToDelete(null)
-            setIsToastOpen(true)
+            toast.success('Transaction deleted')
+            setIsDeleteModalOpen(false)
         }
     }
 
@@ -92,6 +154,8 @@ const Transactions = () => {
         { label: 'Income Only', value: 'income' },
         { label: 'Expenses Only', value: 'expense' }
     ]
+
+    if (isLoading) return <ListSkeleton />
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-10">
@@ -257,13 +321,12 @@ const Transactions = () => {
                                                 <div className="flex items-center gap-4">
                                                     <div className={cn(
                                                         "flex h-12 w-12 shrink-0 items-center justify-center rounded-[1rem] transition-transform group-hover:scale-110 shadow-sm",
-                                                        t.transferId ? "bg-primary/10 text-primary" : (t.type === 'income' ? 'bg-emerald-theme text-emerald-theme' : 'bg-rose-theme text-rose-theme')
+                                                        (t.type === 'income' ? 'bg-emerald-theme text-emerald-theme' : 'bg-rose-theme text-rose-theme')
                                                     )}>
-                                                        {t.transferId ? <ArrowLeftRight size={20} /> : (t.type === 'income' ? <TrendingUp size={20} /> : <TrendingDown size={20} />)}
+                                                        {(t.type === 'income' ? <TrendingUp size={20} /> : <TrendingDown size={20} />)}
                                                     </div>
                                                     <div>
                                                         <span className="font-bold text-foreground block">{t.category}</span>
-                                                        {t.transferId && <span className="text-[9px] font-black text-primary uppercase tracking-widest">Linked Transfer</span>}
                                                     </div>
                                                 </div>
                                             </td>
@@ -312,15 +375,14 @@ const Transactions = () => {
                                             <div className="flex items-center gap-4">
                                                 <div className={cn(
                                                     "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl shadow-sm",
-                                                    t.transferId ? "bg-primary/10 text-primary" : (t.type === 'income' ? 'bg-emerald-theme text-emerald-theme' : 'bg-rose-theme text-rose-theme')
+                                                    (t.type === 'income' ? 'bg-emerald-theme text-emerald-theme' : 'bg-rose-theme text-rose-theme')
                                                 )}>
-                                                    {t.transferId ? <ArrowLeftRight size={24} /> : (t.type === 'income' ? <TrendingUp size={24} /> : <TrendingDown size={24} />)}
+                                                    {(t.type === 'income' ? <TrendingUp size={24} /> : <TrendingDown size={24} />)}
                                                 </div>
                                                 <div className="space-y-1">
                                                     <p className="font-black text-foreground text-base tracking-tight">{t.category}</p>
                                                     <div className="flex flex-wrap items-center gap-2">
                                                         <p className="text-[10px] font-black text-muted-foreground uppercase tracking-wider">{t.date}</p>
-                                                        {t.transferId && <span className="text-[9px] font-black text-primary uppercase tracking-widest px-1.5 py-0.5 bg-primary/5 rounded-md">Transfer</span>}
                                                     </div>
                                                 </div>
                                             </div>
@@ -382,7 +444,7 @@ const Transactions = () => {
                                     <ChevronLeft size={16} />
                                 </Button>
                                 <span className="text-sm font-black uppercase tracking-widest text-foreground">
-                                    {heatmapDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                                    {getMonthLabel(heatmapDate)}
                                 </span>
                                 <Button
                                     variant="outline"
@@ -394,91 +456,115 @@ const Transactions = () => {
                                 </Button>
                             </div>
 
-                            <div className="grid grid-cols-7 gap-2 sm:gap-4 mb-4">
-                                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                                    <div key={day} className="text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground py-2">
-                                        {day}
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="grid grid-cols-7 gap-2 sm:gap-4">
-                                {Array.from({ length: 35 }).map((_, i) => {
-                                    // Mock Logic for Heatmap
-                                    const day = i + 1
-                                    const daysInMonth = new Date(heatmapDate.getFullYear(), heatmapDate.getMonth() + 1, 0).getDate()
+                            {/* Calendar Grid */}
+                            <div className="mt-4">
+                                <div className="grid grid-cols-7 gap-2 mb-2">
+                                    {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((d) => (
+                                        <span key={d} className="text-[10px] font-black text-muted-foreground text-center uppercase">
+                                            {d}
+                                        </span>
+                                    ))}
+                                </div>
+                                <div className="grid grid-cols-7 gap-2">
+                                    {Array.from({ length: new Date(heatmapDate.getFullYear(), heatmapDate.getMonth(), 1).getDay() }).map((_, idx) => (
+                                        <div key={`empty-${idx}`} />
+                                    ))}
+                                    {Array.from({ length: new Date(heatmapDate.getFullYear(), heatmapDate.getMonth() + 1, 0).getDate() }).map((_, idx) => {
+                                        const day = idx + 1
+                                        const dateStr = `${calendarMonthKey}-${String(day).padStart(2, '0')}`
+                                        const isSelected = selectedCalendarDate === dateStr
+                                        const bucket = dailyBuckets[day]
+                                        const netLabel = bucket ? bucket.net : 0
 
-                                    if (day > daysInMonth) return <div key={i} />
-
-                                    // Deterministic Random for consistency in mock based on month
-                                    const seed = heatmapDate.getMonth() + 1
-                                    const hasSpend = (day * 13 * seed) % 3 !== 0
-                                    const amount = hasSpend ? (day * 123 * seed) % 3500 : 0
-                                    let bgClass = "bg-emerald-500/10 border-emerald-500/20" // Zero Spend
-                                    let textClass = "text-muted-foreground"
-
-                                    if (amount > 2000) {
-                                        bgClass = "bg-rose-500/20 border-rose-500/30 dark:bg-rose-500/10 relative overflow-hidden" // High Spend
-                                        textClass = "text-rose-500"
-                                    } else if (amount > 0) {
-                                        bgClass = "bg-purple-500/20 border-purple-500/30 dark:bg-purple-500/10" // Medium Spend
-                                        textClass = "text-purple-500"
-                                    }
-
-                                    return (
-                                        <div
-                                            key={i}
-                                            className={cn(
-                                                "aspect-square rounded-2xl border flex flex-col items-center justify-center relative group transition-all hover:scale-105 cursor-pointer",
-                                                bgClass
-                                            )}
-                                        >
-                                            <span className={cn("text-sm font-black mb-1", textClass)}>{day}</span>
-                                            {amount > 0 && (
-                                                <span className="text-[9px] font-bold opacity-80 text-foreground">
-                                                    -{currencySymbol}{amount}
-                                                </span>
-                                            )}
-
-                                            {/* High Spend Dot */}
-                                            {amount > 2000 && (
-                                                <div className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse" />
-                                            )}
-
-                                            {/* Tooltip */}
-                                            <div className="absolute bottom-full mb-2 hidden group-hover:block z-20 min-w-[120px] bg-popover text-popover-foreground text-xs p-2 rounded-xl shadow-xl border border-border">
-                                                <p className="font-bold border-b border-border/50 pb-1 mb-1">{heatmapDate.toLocaleString('default', { month: 'short' })} {day}</p>
-                                                {amount > 0 ? (
-                                                    <div className="space-y-1">
-                                                        <p>Grocery: {currencySymbol}{Math.floor(amount * 0.4)}</p>
-                                                        <p>Transport: {currencySymbol}{Math.floor(amount * 0.6)}</p>
-                                                    </div>
-                                                ) : (
-                                                    <p className="text-emerald-500 font-bold">No Spending</p>
+                                        return (
+                                            <button
+                                                key={day}
+                                                type="button"
+                                                onClick={() => setSelectedCalendarDate(dateStr)}
+                                                className={cn(
+                                                    'h-16 rounded-2xl border text-xs flex flex-col items-center justify-center gap-1 transition-all font-bold',
+                                                    getDayIntensityClass(day),
+                                                    isSelected && 'ring-2 ring-offset-2 ring-primary ring-offset-background scale-105'
                                                 )}
-                                            </div>
+                                            >
+                                                <span className="text-[11px]">{day}</span>
+                                                <span className="text-[9px] font-black opacity-80">
+                                                    {bucket
+                                                        ? `${bucket.net >= 0 ? '+' : '-'}${Math.abs(netLabel).toFixed(0)}`
+                                                        : '—'}
+                                                </span>
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Legend */}
+                            <div className="mt-6 flex flex-wrap gap-4 justify-center">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full bg-emerald-500/10 border border-emerald-500/40" />
+                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Net Inflow</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full bg-rose-500/10 border border-rose-500/40" />
+                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Net Outflow</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full bg-muted/40 border border-border/60" />
+                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">No Activity</span>
+                                </div>
+                            </div>
+
+                            {/* Transactions for selected date */}
+                            {selectedCalendarDate && (
+                                <div className="mt-8 border-t border-border/60 pt-6">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div>
+                                            <p className="text-xs font-black text-muted-foreground uppercase tracking-widest">Transactions on</p>
+                                            <p className="text-sm font-black text-foreground">
+                                                {new Date(selectedCalendarDate).toLocaleDateString()}
+                                            </p>
                                         </div>
-                                    )
-                                })}
-                            </div>
+                                        <div className="flex items-center gap-2 text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                                            <CalendarIcon size={14} />
+                                            <span>{dailyBuckets[parseInt(selectedCalendarDate.slice(8, 10), 10)]?.transactions.length || 0} items</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
+                                        {dailyBuckets[parseInt(selectedCalendarDate.slice(8, 10), 10)]?.transactions.map((t) => (
+                                            <div
+                                                key={t.id}
+                                                className="flex items-center justify-between p-3 rounded-2xl bg-muted/40 border border-border/60"
+                                            >
+                                                <div className="flex flex-col">
+                                                    <span className="text-xs font-black text-foreground tracking-tight">{t.category}</span>
+                                                    <span className="text-[11px] text-muted-foreground truncate max-w-[160px]">{t.note || 'No description'}</span>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className={cn(
+                                                        'text-sm font-black',
+                                                        t.type === 'income' ? 'text-emerald-theme' : 'text-foreground'
+                                                    )}>
+                                                        {t.type === 'income' ? '+' : '-'}
+                                                        <PrivacyValue>{currencySymbol}</PrivacyValue>
+                                                        <PrivacyValue>{t.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</PrivacyValue>
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {!dailyBuckets[parseInt(selectedCalendarDate.slice(8, 10), 10)] && (
+                                            <p className="text-[11px] text-muted-foreground italic">No transactions recorded for this date.</p>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </Card>
-                        <div className="mt-4 flex gap-6 justify-center">
-                            <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full bg-emerald-500/20 border border-emerald-500/50" />
-                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Zero Spend</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full bg-purple-500/20 border border-purple-500/50" />
-                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Moderate</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full bg-rose-500/20 border border-rose-500/50" />
-                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">High Intensity</span>
-                            </div>
-                        </div>
                     </div>
                 )
             }
 
+            {/* Confirmation Modal */}
             <ConfirmationModal
                 isOpen={isDeleteModalOpen}
                 onClose={() => setIsDeleteModalOpen(false)}
@@ -496,14 +582,7 @@ const Transactions = () => {
                 transaction={transactionToEdit}
             />
 
-            <Toast
-                isOpen={isToastOpen}
-                onClose={() => setIsToastOpen(false)}
-                message="Transaction moved to trash"
-                actionLabel="Undo"
-                onAction={undoDelete}
-            />
-        </div >
+        </div>
     )
 }
 

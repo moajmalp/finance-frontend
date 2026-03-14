@@ -1,7 +1,8 @@
+import { useMemo, useState } from 'react'
+import api from '../services/api'
 import { TrendingUp, TrendingDown, Wallet, ArrowUpRight, ArrowDownRight, PieChart as PieChartIcon, Activity, Target, Sparkles } from 'lucide-react'
 import Card from '../components/ui/Card'
 import Dropdown from '../components/ui/Dropdown'
-import { useTransactions } from '../context/TransactionContext'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart as RePieChart, Pie } from 'recharts'
 import { motion } from 'framer-motion'
 import { cn } from '../lib/utils'
@@ -9,12 +10,44 @@ import EmptyState from '../components/ui/EmptyState'
 import Button from '../components/ui/Button'
 import ForecastChart from '../components/charts/ForecastChart'
 import PrivacyValue from '../components/ui/PrivacyValue'
+import { DashboardSkeleton } from '../skeletons/DashboardSkeleton'
+
+import { useTransactions } from '../context/TransactionContext'
 
 const Dashboard = () => {
-    const { balance, income, expenses, transactions, accounts, budgets, goals, insights, selectedMonth, setSelectedMonth, calculateBalance, currencySymbol } = useTransactions()
+    const {
+        accounts: vaults,
+        transactions,
+        balance: totalBalance,
+        income,
+        expenses,
+        netWorthDelta,
+        calculateBalance,
+        currencySymbol,
+        selectedMonth,
+        setSelectedMonth,
+        budgets,
+        goals,
+        insights
+    } = useTransactions()
 
+    const isLoading = false // Context handles loading
+    const error = null
 
-    const filteredTransactions = transactions.filter(t => t.date.startsWith(selectedMonth))
+    // Data Fetching
+
+    if (isLoading) return <DashboardSkeleton />
+
+    if (error) return (
+        <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4 animate-in fade-in zoom-in duration-500">
+            <div className="p-8 text-center bg-rose-500/10 rounded-3xl border border-rose-500/20 backdrop-blur-sm">
+                <p className="font-black text-rose-500 mb-4">{error}</p>
+                <Button onClick={() => window.location.reload()} variant="outline" className="border-rose-500/30 hover:bg-rose-500/10 text-rose-500">Retry Connection</Button>
+            </div>
+        </div>
+    )
+
+    const filteredTransactions = transactions.filter(t => t.date && t.date.startsWith(selectedMonth))
 
     // Compute Category Breakdown for Pie Chart
     const categoryTotals = filteredTransactions
@@ -31,43 +64,62 @@ const Dashboard = () => {
     const summary = [
         {
             label: 'Total Balance',
-            amount: balance || 0,
+            amount: totalBalance,
             icon: Wallet,
             color: 'text-indigo-theme',
             bg: 'bg-indigo-theme-bg',
             fill: 'bg-indigo-theme',
             glow: 'shadow-indigo-theme/10',
-            trend: '+2.5%'
+            trend: 'In Sync'
         },
         {
             label: 'Monthly Income',
-            amount: income || 0,
+            amount: income,
             icon: TrendingUp,
             color: 'text-emerald-theme',
             bg: 'bg-emerald-theme-bg',
             fill: 'bg-emerald-theme',
             glow: 'shadow-emerald-theme/10',
-            trend: '+12.3%'
+            trend: 'Live'
         },
         {
             label: 'Monthly Expenses',
-            amount: expenses || 0,
+            amount: expenses,
             icon: TrendingDown,
             color: 'text-rose-theme',
             bg: 'bg-rose-theme-bg',
             fill: 'bg-rose-theme',
             glow: 'shadow-rose-theme/10',
-            trend: '-4.1%'
+            trend: 'Live'
         },
     ]
 
-    const monthOptions = [
-        { label: 'March 2024', value: '2024-03' },
-        { label: 'February 2024', value: '2024-02' },
-        { label: 'January 2024', value: '2024-01' },
-    ]
+    // Derive month options from transaction dates, plus current & recent months
+    const monthOptions = useMemo(() => {
+        const months = new Set()
+        transactions.forEach(t => {
+            if (t.date && t.date.length >= 7) months.add(t.date.slice(0, 7))
+        })
+        const now = new Date()
+        for (let i = 0; i < 12; i++) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+            months.add(d.toISOString().slice(0, 7))
+        }
+        return Array.from(months)
+            .sort()
+            .reverse()
+            .slice(0, 12)
+            .map(ym => {
+                const [y, m] = ym.split('-')
+                const label = new Date(parseInt(y), parseInt(m) - 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
+                return { label, value: ym }
+            })
+    }, [transactions])
 
     const COLORS = ['#4338ca', '#059669', '#d97706', '#dc2626', '#7c3aed', '#db2777']
+
+    // Placeholders for yet-to-be-connected features
+    // Placeholders removed as they are now coming from context
 
     return (
         <div className="space-y-10 animate-in fade-in slide-in-from-bottom-5 duration-700">
@@ -150,19 +202,16 @@ const Dashboard = () => {
                                 <Wallet size={20} className="text-primary" />
                                 Vault Summary
                             </h3>
-                            <Button variant="ghost" size="sm" onClick={() => setActiveTab('accounts')} className="text-[10px] font-black tracking-widest h-8">GO TO VAULT</Button>
+                            <Button variant="ghost" size="sm" className="text-[10px] font-black tracking-widest h-8">GO TO VAULT</Button>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-border/50">
-                            {accounts && accounts.slice(0, 3).map(acc => (
+                            {vaults && vaults.slice(0, 3).map(acc => (
                                 <div key={acc.id} className="p-6 hover:bg-card-muted/50 transition-colors cursor-pointer group">
                                     <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{acc.name}</p>
                                     <h4 className="text-xl font-black text-foreground mt-1">
                                         <PrivacyValue>{currencySymbol}</PrivacyValue>
-                                        <PrivacyValue>{(calculateBalance(acc.id) || 0).toLocaleString()}</PrivacyValue>
+                                        <PrivacyValue>{calculateBalance(acc.id).toLocaleString()}</PrivacyValue>
                                     </h4>
-                                    <div className="mt-3 h-1 w-full bg-muted dark:bg-white/10 rounded-full overflow-hidden">
-                                        <div className={`h-full ${acc.color} opacity-60`} style={{ width: '70%' }} />
-                                    </div>
                                 </div>
                             ))}
                         </div>

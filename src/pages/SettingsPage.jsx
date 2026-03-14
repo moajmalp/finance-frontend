@@ -9,16 +9,18 @@ import EmptyState from '../components/ui/EmptyState'
 import { useTransactions } from '../context/TransactionContext'
 
 import { motion, AnimatePresence } from 'framer-motion'
-import Toast from '../components/ui/Toast'
+import toast from 'react-hot-toast'
 import { cn } from '../lib/utils'
-
 import ConfirmationModal from '../components/ui/ConfirmationModal'
+import { useMockLoading } from '../hooks/useMockLoading'
+import { GridSkeleton } from '../skeletons/GridSkeleton'
 
 const SettingsPage = () => {
-    const { categories, addCategory, deleteCategory, budgets, setBudget, isPrivacyMode, setIsPrivacyMode, currency, setCurrency, timezone, setTimezone, currencySymbol, subscriptionKeywords, addSubscriptionKeyword, deleteSubscriptionKeyword } = useTransactions()
+    const isLoading = useMockLoading()
+    const { categories, addCategory, deleteCategory, budgets, setBudget, isPrivacyMode, setIsPrivacyMode, currency, setCurrency, timezone, setTimezone, currencySymbol, subscriptionKeywords, addSubscriptionKeyword, deleteSubscriptionKeyword, enableBudgetAlerts, setEnableBudgetAlerts, enableEmailBudgetAlerts, setEnableEmailBudgetAlerts } = useTransactions()
+
     const [activeType, setActiveType] = useState('expense')
     const [newCategory, setNewCategory] = useState('')
-    const [toast, setToast] = useState({ isOpen: false, message: '' })
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
     const [confirmAction, setConfirmAction] = useState({ title: '', message: '', onConfirm: () => { } })
     const [tempCurrency, setTempCurrency] = useState(currency)
@@ -31,7 +33,7 @@ const SettingsPage = () => {
 
         const currentCats = Array.isArray(categories[activeType]) ? categories[activeType] : []
         if (currentCats.includes(newCategory)) {
-            setToast({ isOpen: true, message: 'Category already exists' })
+            toast.error('Category already exists')
             return
         }
 
@@ -42,7 +44,8 @@ const SettingsPage = () => {
             onConfirm: () => {
                 addCategory(activeType, newCategory)
                 setNewCategory('')
-                setToast({ isOpen: true, message: 'Category added successfully' })
+                toast.success('Category added successfully')
+                setIsConfirmModalOpen(false)
             }
         })
         setIsConfirmModalOpen(true)
@@ -55,7 +58,8 @@ const SettingsPage = () => {
             type: 'danger',
             onConfirm: () => {
                 deleteCategory(type, name)
-                setToast({ isOpen: true, message: 'Category deleted' })
+                toast.success('Category deleted')
+                setIsConfirmModalOpen(false)
             }
         })
         setIsConfirmModalOpen(true)
@@ -73,7 +77,8 @@ const SettingsPage = () => {
             onConfirm: () => {
                 setCurrency(tempCurrency)
                 setTimezone(tempTimezone)
-                setToast({ isOpen: true, message: 'Regional settings updated successfully' })
+                toast.success('Regional settings updated successfully')
+                setIsConfirmModalOpen(false)
             }
         })
         setIsConfirmModalOpen(true)
@@ -81,6 +86,8 @@ const SettingsPage = () => {
 
     const expenseCategories = Array.isArray(categories.expense) ? categories.expense : []
     const categoryList = Array.isArray(categories[activeType]) ? categories[activeType] : []
+
+    if (isLoading) return <GridSkeleton />
 
     return (
         <div className="space-y-10 animate-in fade-in slide-in-from-bottom-5 duration-700 pb-10">
@@ -237,7 +244,7 @@ const SettingsPage = () => {
                                         if (newKeyword.trim()) {
                                             addSubscriptionKeyword(newKeyword.trim())
                                             setNewKeyword('')
-                                            setToast({ isOpen: true, message: 'Keyword added' })
+                                            toast.success('Keyword added')
                                         }
                                     }}
                                     className="h-14 px-8 rounded-2xl shadow-xl shadow-purple-500/20 bg-purple-600 hover:bg-purple-700 text-white font-bold uppercase tracking-widest text-xs"
@@ -329,6 +336,61 @@ const SettingsPage = () => {
                                     transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                                     className="h-8 w-8 rounded-full bg-white shadow-sm"
                                     style={{ x: isPrivacyMode ? 40 : 0 }}
+                                />
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Alerting preferences */}
+                    <div className="grid md:grid-cols-2 gap-6 mt-10 relative z-10">
+                        <div className="flex items-center justify-between p-6 sm:p-8 rounded-[2rem] bg-card/40 dark:bg-slate-800/20 border border-border/50 hover:bg-card/60 dark:hover:bg-slate-800/40 transition-all group/item shadow-sm">
+                            <div className="flex items-center gap-5">
+                                <div className="h-12 w-12 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center group-hover/item:scale-110 transition-transform">
+                                    <Bell size={24} />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-black text-foreground tracking-tight uppercase tracking-widest leading-none">Budget Alerts</p>
+                                    <p className="text-[10px] font-bold text-muted-foreground mt-1.5 opacity-60">In-app and toast notifications</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setEnableBudgetAlerts(!enableBudgetAlerts)}
+                                className={cn(
+                                    "relative flex h-10 w-20 items-center rounded-full p-1 transition-colors focus:outline-none",
+                                    enableBudgetAlerts ? "bg-primary" : "bg-muted"
+                                )}
+                            >
+                                <motion.div
+                                    layout
+                                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                                    className="h-8 w-8 rounded-full bg-white shadow-sm"
+                                    style={{ x: enableBudgetAlerts ? 40 : 0 }}
+                                />
+                            </button>
+                        </div>
+
+                        <div className="flex items-center justify-between p-6 sm:p-8 rounded-[2rem] bg-card/40 dark:bg-slate-800/20 border border-border/50 hover:bg-card/60 dark:hover:bg-slate-800/40 transition-all group/item shadow-sm">
+                            <div className="flex items-center gap-5">
+                                <div className="h-12 w-12 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center group-hover/item:scale-110 transition-transform">
+                                    <Shield size={24} />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-black text-foreground tracking-tight uppercase tracking-widest leading-none">Email Budget Alerts</p>
+                                    <p className="text-[10px] font-bold text-muted-foreground mt-1.5 opacity-60">Requires a configured email and SMTP</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setEnableEmailBudgetAlerts(!enableEmailBudgetAlerts)}
+                                className={cn(
+                                    "relative flex h-10 w-20 items-center rounded-full p-1 transition-colors focus:outline-none",
+                                    enableEmailBudgetAlerts ? "bg-primary" : "bg-muted"
+                                )}
+                            >
+                                <motion.div
+                                    layout
+                                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                                    className="h-8 w-8 rounded-full bg-white shadow-sm"
+                                    style={{ x: enableEmailBudgetAlerts ? 40 : 0 }}
                                 />
                             </button>
                         </div>
@@ -441,11 +503,6 @@ const SettingsPage = () => {
                 type={confirmAction.type}
             />
 
-            <Toast
-                isOpen={toast.isOpen}
-                message={toast.message}
-                onClose={() => setToast({ ...toast, isOpen: false })}
-            />
         </div>
     )
 }
