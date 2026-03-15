@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react'
 import { cn } from '../../lib/utils'
 
-const Calendar = ({ value, onChange, label, error, className }) => {
+const Calendar = ({ value, onChange, label, error, className, required }) => {
     const [isOpen, setIsOpen] = useState(false)
     const [viewDate, setViewDate] = useState(value ? new Date(value) : new Date())
     const containerRef = useRef(null)
@@ -60,6 +60,7 @@ const Calendar = ({ value, onChange, label, error, className }) => {
             {label && (
                 <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">
                     {label}
+                    {required && <span className="text-red-500 ml-1">*</span>}
                 </label>
             )}
             <div className="relative">

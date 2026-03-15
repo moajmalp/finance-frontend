@@ -14,10 +14,10 @@ const Recurring = () => {
     const { recurring, setRecurring, categories, accounts } = useTransactions()
     const [isAddModalOpen, setIsAddModalOpen] = useState(false)
     const [newRecurring, setNewRecurring] = useState({
-        type: 'expense',
+        type: 'EXPENSE',
         category: '',
         amount: '',
-        frequency: 'monthly',
+        frequency: 'MONTHLY',
         startDate: new Date().toISOString().split('T')[0],
         accountId: accounts[0]?.id || '',
         note: ''
@@ -35,10 +35,10 @@ const Recurring = () => {
         setRecurring([...recurring, entry])
         setIsAddModalOpen(false)
         setNewRecurring({
-            type: 'expense',
+            type: 'EXPENSE',
             category: '',
             amount: '',
-            frequency: 'monthly',
+            frequency: 'MONTHLY',
             startDate: new Date().toISOString().split('T')[0],
             accountId: accounts[0]?.id || '',
             note: ''
@@ -54,7 +54,7 @@ const Recurring = () => {
     }
 
     const getFrequencyLabel = (freq) => {
-        const labels = { daily: 'Every Day', weekly: 'Every Week', monthly: 'Every Month' }
+        const labels = { DAILY: 'Every Day', WEEKLY: 'Every Week', MONTHLY: 'Every Month' }
         return labels[freq] || freq
     }
 
@@ -94,7 +94,7 @@ const Recurring = () => {
                                     <div className="flex items-center justify-between">
                                         <div className={cn(
                                             "h-14 w-14 rounded-2xl flex items-center justify-center shadow-lg shadow-current/10",
-                                            rec.type === 'income' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'
+                                            rec.type === 'INCOME' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'
                                         )}>
                                             <Repeat size={24} />
                                         </div>
@@ -133,9 +133,9 @@ const Recurring = () => {
                                             <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">Amount</p>
                                             <p className={cn(
                                                 "text-2xl font-black tracking-tight",
-                                                rec.type === 'income' ? 'text-emerald-500' : 'text-foreground'
+                                                rec.type === 'INCOME' ? 'text-emerald-500' : 'text-foreground'
                                             )}>
-                                                {rec.type === 'income' ? '+' : '-'}${rec.amount.toFixed(2)}
+                                                {rec.type === 'INCOME' ? '+' : '-'}${rec.amount.toFixed(2)}
                                             </p>
                                         </div>
                                     </div>
@@ -162,7 +162,7 @@ const Recurring = () => {
             <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="Schedule Transaction">
                 <form onSubmit={handleAdd} className="space-y-6">
                     <div className="flex p-1.5 bg-muted rounded-[1.25rem]">
-                        {['expense', 'income'].map((type) => (
+                        {['EXPENSE', 'INCOME'].map((type) => (
                             <button
                                 key={type}
                                 type="button"
@@ -191,9 +191,9 @@ const Recurring = () => {
                         <Dropdown
                             label="Frequency"
                             options={[
-                                { label: 'Daily', value: 'daily' },
-                                { label: 'Weekly', value: 'weekly' },
-                                { label: 'Monthly', value: 'monthly' }
+                                { label: 'Daily', value: 'DAILY' },
+                                { label: 'Weekly', value: 'WEEKLY' },
+                                { label: 'Monthly', value: 'MONTHLY' }
                             ]}
                             value={newRecurring.frequency}
                             onChange={(val) => setNewRecurring({ ...newRecurring, frequency: val })}

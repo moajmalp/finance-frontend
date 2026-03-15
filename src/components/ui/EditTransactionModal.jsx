@@ -12,7 +12,7 @@ const EditTransactionModal = ({ isOpen, onClose, transaction }) => {
     const { updateTransaction, categories, currencySymbol } = useTransactions()
     const [amount, setAmount] = useState('')
     const [category, setCategory] = useState('')
-    const [type, setType] = useState('expense')
+    const [type, setType] = useState('EXPENSE')
     const [note, setNote] = useState('')
     const [date, setDate] = useState('')
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
@@ -52,15 +52,15 @@ const EditTransactionModal = ({ isOpen, onClose, transaction }) => {
                 <div className="flex p-1.5 bg-muted/50 rounded-[1.25rem] border border-border/50">
                     <button
                         type="button"
-                        onClick={() => setType('expense')}
-                        className={`flex-1 py-3 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl transition-all ${type === 'expense' ? 'bg-card dark:bg-slate-900 text-rose-theme shadow-lg' : 'text-muted-foreground hover:text-foreground'}`}
+                        onClick={() => setType('EXPENSE')}
+                        className={`flex-1 py-3 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl transition-all ${type === 'EXPENSE' ? 'bg-card dark:bg-slate-900 text-rose-theme shadow-lg' : 'text-muted-foreground hover:text-foreground'}`}
                     >
                         Expense
                     </button>
                     <button
                         type="button"
-                        onClick={() => setType('income')}
-                        className={`flex-1 py-3 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl transition-all ${type === 'income' ? 'bg-card dark:bg-slate-900 text-emerald-theme shadow-lg' : 'text-muted-foreground hover:text-foreground'}`}
+                        onClick={() => setType('INCOME')}
+                        className={`flex-1 py-3 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl transition-all ${type === 'INCOME' ? 'bg-card dark:bg-slate-900 text-emerald-theme shadow-lg' : 'text-muted-foreground hover:text-foreground'}`}
                     >
                         Income
                     </button>

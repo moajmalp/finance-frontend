@@ -25,21 +25,21 @@ const Subscriptions = () => {
     const [newSub, setNewSub] = useState({
         name: '',
         amount: '',
-        frequency: 'monthly',
+        frequency: 'MONTHLY',
         category: 'Subscriptions',
         accountId: accounts[0]?.id || '',
         nextBilling: new Date().toISOString().split('T')[0]
     })
 
     const totalMonthly = (subscriptions || [])
-        .filter(s => s.is_active && s.frequency === 'monthly')
+        .filter(s => s.is_active && s.frequency === 'MONTHLY')
         .reduce((sum, s) => sum + (parseFloat(s.amount) || 0), 0)
 
     const annualCost = (subscriptions || [])
         .filter(s => s.is_active)
         .reduce((sum, s) => {
             const amount = parseFloat(s.amount) || 0
-            return sum + (s.frequency === 'monthly' ? amount * 12 : amount)
+            return sum + (s.frequency === 'MONTHLY' ? amount * 12 : amount)
         }, 0)
 
     const upcomingBills = subscriptions
@@ -70,7 +70,7 @@ const Subscriptions = () => {
                 setNewSub({
                     name: '',
                     amount: '',
-                    frequency: 'monthly',
+                    frequency: 'MONTHLY',
                     category: 'Subscriptions',
                     accountId: accounts[0]?.id || '',
                     nextBilling: new Date().toISOString().split('T')[0]
@@ -223,8 +223,8 @@ const Subscriptions = () => {
                         <Dropdown
                             label="Frequency"
                             options={[
-                                { label: 'Monthly', value: 'monthly' },
-                                { label: 'Yearly', value: 'yearly' }
+                                { label: 'Monthly', value: 'MONTHLY' },
+                                { label: 'Yearly', value: 'YEARLY' }
                             ]}
                             value={newSub.frequency}
                             onChange={val => setNewSub({ ...newSub, frequency: val })}

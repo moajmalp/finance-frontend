@@ -21,7 +21,7 @@ const AddTransaction = ({ onSuccess }) => {
     const fileInputRef = useRef(null)
     const [formData, setFormData] = useState({
         amount: '',
-        type: 'expense',
+        type: 'EXPENSE',
         category: '',
         accountId: accounts[0]?.id || '',
         date: new Date().toISOString().split('T')[0],
@@ -144,7 +144,7 @@ const AddTransaction = ({ onSuccess }) => {
                     amount: Number(formData.amount),
                     category: formData.category,
                     accountId: formData.accountId,
-                    frequency: 'monthly',
+                    frequency: 'MONTHLY',
                     nextBilling: nextDueDate.toISOString(),
                     active: true
                 })
@@ -180,7 +180,7 @@ const AddTransaction = ({ onSuccess }) => {
             <Card className="shadow-2xl shadow-indigo-500/5 relative overflow-hidden rounded-[2.5rem] border-none p-6 sm:p-10">
                 <form onSubmit={handleSubmit} className="space-y-8 relative z-10">
                     <div className="flex p-1.5 bg-card-muted/50 border border-border/50 rounded-2xl">
-                        {['expense', 'income'].map((type) => (
+                        {['EXPENSE', 'INCOME'].map((type) => (
                             <button
                                 key={type}
                                 type="button"
@@ -206,6 +206,7 @@ const AddTransaction = ({ onSuccess }) => {
                             value={formData.amount}
                             onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                             error={errors.amount}
+                            required
                             className={cn(
                                 "h-16 text-2xl font-black rounded-2xl bg-card/50 transition-all duration-500",
                                 scanSuccess && "border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-500/5"
@@ -219,6 +220,7 @@ const AddTransaction = ({ onSuccess }) => {
                                 value={formData.category}
                                 onChange={(val) => setFormData({ ...formData, category: val })}
                                 error={errors.category}
+                                required
                                 placeholder="Classification..."
                                 className="h-14"
                             />
@@ -232,13 +234,14 @@ const AddTransaction = ({ onSuccess }) => {
                                 value={formData.accountId}
                                 onChange={(val) => setFormData({ ...formData, accountId: val })}
                                 error={errors.accountId}
+                                required
                                 placeholder="Select vault..."
                                 className="h-14"
                             />
                         </div>
 
                         {/* Split Bill UI */}
-                        {formData.type === 'expense' && (
+                        {formData.type === 'EXPENSE' && (
                             <div className="p-5 bg-card border border-border rounded-3xl space-y-4">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
@@ -269,6 +272,7 @@ const AddTransaction = ({ onSuccess }) => {
                                                 value={formData.splitAmount}
                                                 onChange={e => setFormData({ ...formData, splitAmount: e.target.value })}
                                                 error={errors.splitAmount}
+                                                required
                                                 className="bg-card-muted/50"
                                             />
                                             <Input
@@ -277,6 +281,7 @@ const AddTransaction = ({ onSuccess }) => {
                                                 value={formData.splitWith}
                                                 onChange={e => setFormData({ ...formData, splitWith: e.target.value })}
                                                 error={errors.splitWith}
+                                                required
                                                 className="bg-card-muted/50"
                                             />
                                         </motion.div>
@@ -352,6 +357,7 @@ const AddTransaction = ({ onSuccess }) => {
                             value={formData.date}
                             onChange={(val) => setFormData({ ...formData, date: val })}
                             error={errors.date}
+                            required
                         />
 
                         <div>

@@ -16,8 +16,8 @@ const Analytics = () => {
 
     const trendData = last6Months.map(month => {
         const monthTransactions = transactions.filter(t => t.date.startsWith(month))
-        const income = monthTransactions.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0)
-        const expense = monthTransactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0)
+        const income = monthTransactions.filter(t => t.type === 'INCOME').reduce((acc, t) => acc + t.amount, 0)
+        const expense = monthTransactions.filter(t => t.type === 'EXPENSE').reduce((acc, t) => acc + t.amount, 0)
 
         const dateObj = new Date(month + '-01')
         return {
@@ -30,7 +30,7 @@ const Analytics = () => {
 
     // Category Breakdown (All time or current selected - let's do all time for analytics)
     const categoryData = transactions
-        .filter(t => t.type === 'expense')
+        .filter(t => t.type === 'EXPENSE')
         .reduce((acc, t) => {
             acc[t.category] = (acc[t.category] || 0) + t.amount
             return acc

@@ -11,14 +11,15 @@ const Dropdown = ({
     label,
     className,
     searchable = true,
-    error
+    error,
+    required
 }) => {
     const [isOpen, setIsOpen] = useState(false)
     const [searchTerm, setSearchTerm] = useState('')
     const dropdownRef = useRef(null)
 
     // Handle both array of strings and array of objects
-    const normalizedOptions = options.map(opt => {
+    const normalizedOptions = (options || []).map(opt => {
         if (typeof opt === 'string') return { label: opt, value: opt }
         return opt
     })
@@ -41,7 +42,12 @@ const Dropdown = ({
 
     return (
         <div className={cn("space-y-2 w-full", className)} ref={dropdownRef}>
-            {label && <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">{label}</label>}
+            {label && (
+                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">
+                    {label}
+                    {required && <span className="text-red-500 ml-1">*</span>}
+                </label>
+            )}
 
             <div className="relative">
                 <button

@@ -31,16 +31,16 @@ const Accounts = () => {
     })
     const [newAccount, setNewAccount] = useState({
         name: '',
-        type: 'bank',
+        type: 'BANK',
         initialBalance: '',
         color: 'bg-indigo-500'
     })
 
     const getIcon = (type) => {
         switch (type) {
-            case 'bank': return Landmark
-            case 'credit_card': return CreditCard
-            case 'cash': return Banknote
+            case 'BANK': return Landmark
+            case 'CREDIT_CARD': return CreditCard
+            case 'CASH': return Banknote
             default: return Wallet
         }
     }
@@ -79,7 +79,7 @@ const Accounts = () => {
                 await addAccount(newAccount)
                 setIsAddModalOpen(false)
                 setIsConfirmModalOpen(false)
-                setNewAccount({ name: '', type: 'bank', initialBalance: '', color: 'bg-indigo-500' })
+                setNewAccount({ name: '', type: 'BANK', initialBalance: '', color: 'bg-indigo-500' })
                 toast.success('Vault created')
             }
         })
@@ -177,7 +177,7 @@ const Accounts = () => {
                     )}
                     {accounts.map((acc, i) => {
                         if (!acc) return null;
-                        const Icon = getIcon(acc.type || 'bank')
+                        const Icon = getIcon(acc.type || 'BANK')
                         const balance = calculateBalance(acc.id)
                         return (
                             <motion.div
@@ -225,6 +225,7 @@ const Accounts = () => {
                             value={transferData.fromId}
                             onChange={(val) => setTransferData({ ...transferData, fromId: val })}
                             placeholder="Select..."
+                            required
                         />
                         <Dropdown
                             label="To Vault"
@@ -235,6 +236,7 @@ const Accounts = () => {
                             value={transferData.toId}
                             onChange={(val) => setTransferData({ ...transferData, toId: val })}
                             placeholder="Select..."
+                            required
                         />
                     </div>
                     <Input label={`Amount (${currencySymbol})`} type="number" step="0.01" placeholder="0.00" value={transferData.amount} onChange={(e) => setTransferData({ ...transferData, amount: e.target.value })} required className="font-black" />
@@ -251,10 +253,10 @@ const Accounts = () => {
                         <Dropdown
                             label="Vault Type"
                             options={[
-                                { label: 'Bank Account', value: 'bank' },
-                                { label: 'Credit Card', value: 'credit_card' },
-                                { label: 'Cash Wallet', value: 'cash' },
-                                { label: 'Investment Wallet', value: 'wallet' }
+                                { label: 'Bank Account', value: 'BANK' },
+                                { label: 'Credit Card', value: 'CREDIT_CARD' },
+                                { label: 'Cash Wallet', value: 'CASH' },
+                                { label: 'Investment Wallet', value: 'WALLET' }
                             ]}
                             value={newAccount.type}
                             onChange={(val) => setNewAccount({ ...newAccount, type: val })}

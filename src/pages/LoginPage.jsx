@@ -45,34 +45,46 @@ const LoginPage = () => {
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-8">
-                        <div className="space-y-2">
-                            <div className="relative group border-b border-border/50 focus-within:border-primary transition-all text-left">
-                                <Mail className="absolute left-0 top-1/2 -translate-y-1/2 text-muted-foreground/50 group-hover:text-primary/60 transition-colors" size={16} />
-                                <input
-                                    type="text"
-                                    placeholder="Username or Email"
-                                    className="w-full h-12 pl-8 bg-transparent border-none outline-none text-sm font-bold placeholder:text-muted-foreground/30 text-foreground"
-                                    value={formData.username}
-                                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                                />
+                        <div className="space-y-4">
+                            <div className="space-y-1.5 text-left">
+                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">
+                                    Identity Access <span className="text-red-500 ml-1">*</span>
+                                </label>
+                                <div className="relative group border-b border-border/50 focus-within:border-primary transition-all">
+                                    <Mail className="absolute left-0 top-1/2 -translate-y-1/2 text-muted-foreground/50 group-hover:text-primary/60 transition-colors" size={16} />
+                                    <input
+                                        type="text"
+                                        placeholder="Username or Email"
+                                        className="w-full h-12 pl-8 bg-transparent border-none outline-none text-sm font-bold placeholder:text-muted-foreground/30 text-foreground"
+                                        value={formData.username}
+                                        onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                                        required
+                                    />
+                                </div>
                             </div>
 
-                            <div className="relative group border-b border-border/50 focus-within:border-primary transition-all text-left">
-                                <Lock className="absolute left-0 top-1/2 -translate-y-1/2 text-muted-foreground/50 group-hover:text-primary/60 transition-colors" size={16} />
-                                <input
-                                    type={showPassword ? "text" : "password"}
-                                    placeholder="Access Code"
-                                    className="w-full h-12 pl-8 pr-10 bg-transparent border-none outline-none text-sm font-bold placeholder:text-muted-foreground/30 text-foreground"
-                                    value={formData.password}
-                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-0 top-1/2 -translate-y-1/2 text-muted-foreground/30 hover:text-primary transition-colors p-2"
-                                >
-                                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                                </button>
+                            <div className="space-y-1.5 text-left">
+                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">
+                                    Security Key <span className="text-red-500 ml-1">*</span>
+                                </label>
+                                <div className="relative group border-b border-border/50 focus-within:border-primary transition-all">
+                                    <Lock className="absolute left-0 top-1/2 -translate-y-1/2 text-muted-foreground/50 group-hover:text-primary/60 transition-colors" size={16} />
+                                    <input
+                                        type={showPassword ? "text" : "password"}
+                                        placeholder="Access Code"
+                                        className="w-full h-12 pl-8 pr-10 bg-transparent border-none outline-none text-sm font-bold placeholder:text-muted-foreground/30 text-foreground"
+                                        value={formData.password}
+                                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-0 top-1/2 -translate-y-1/2 text-muted-foreground/30 hover:text-primary transition-colors p-2"
+                                    >
+                                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                    </button>
+                                </div>
                             </div>
                         </div>
 

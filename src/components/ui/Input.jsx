@@ -1,11 +1,12 @@
 import { cn } from '../../lib/utils'
 
-const Input = ({ className, label, error, ...props }) => {
+const Input = ({ className, label, error, required, ...props }) => {
     return (
         <div className="space-y-1.5 w-full">
             {label && (
                 <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest ml-1">
                     {label}
+                    {required && <span className="text-red-500 ml-1">*</span>}
                 </label>
             )}
             <input
