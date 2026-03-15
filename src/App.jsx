@@ -145,13 +145,19 @@ function AppContent() {
 
 import { Toaster } from 'react-hot-toast'
 
+import { SecurityProvider } from './context/SecurityContext'
+import PatternLockOverlay from './components/security/PatternLockOverlay'
+
 function App() {
   return (
     <AuthProvider>
-      <TransactionProvider>
-        <AppContent />
-        <Toaster position="top-right" reverseOrder={false} />
-      </TransactionProvider>
+      <SecurityProvider>
+        <TransactionProvider>
+          <AppContent />
+          <PatternLockOverlay />
+          <Toaster position="top-right" reverseOrder={false} />
+        </TransactionProvider>
+      </SecurityProvider>
     </AuthProvider>
   )
 }
