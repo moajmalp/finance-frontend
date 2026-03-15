@@ -159,7 +159,7 @@ const Reports = () => {
                 </div>
                 <div className="relative z-10 space-y-6">
                     <h3 className="text-2xl font-black tracking-tight">Quarterly Health Report</h3>
-                    <p className="text-white/80 font-medium max-w-xl">Our intelligent engine has analyzed your last 90 days. You've increased your net worth by 12.5% while reducing unnecessary subscriptions by {currencySymbol}450.</p>
+                    <p className="text-white/80 font-medium max-w-xl">Our intelligent engine has analyzed your last 90 days. You've increased your net worth by 12.5% while reducing unnecessary subscriptions by {currencySymbol}35,000.</p>
                     <div className="flex gap-4">
                         <Button className="bg-white text-primary hover:bg-white/90 font-black h-12 px-8 rounded-2xl shadow-lg border-none">
                             Unlock Full Analysis

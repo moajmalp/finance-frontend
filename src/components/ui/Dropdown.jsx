@@ -10,7 +10,7 @@ const Dropdown = ({
     placeholder = "Select option",
     label,
     className,
-    searchable = true,
+    searchable = false,
     error,
     required
 }) => {
@@ -54,7 +54,7 @@ const Dropdown = ({
                     type="button"
                     onClick={() => setIsOpen(!isOpen)}
                     className={cn(
-                        "w-full h-12 px-4 rounded-2xl bg-card dark:bg-slate-900 border border-border/50 flex items-center justify-between transition-all group hover:border-primary/30",
+                        "w-full h-12 px-4 rounded-2xl bg-card border border-border flex items-center justify-between transition-all group hover:border-primary/30",
                         isOpen && "ring-4 ring-primary/10 border-primary shadow-lg",
                         error && "border-error ring-error/10"
                     )}

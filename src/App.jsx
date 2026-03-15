@@ -28,11 +28,14 @@ function AppContent() {
 
   const [activeTab, setActiveTab] = useState('dashboard')
 
-  // Global Shortcut: Ctrl + Space (Privacy) | Shift + Space (Theme)
+  // Global Shortcut: Ctrl/Cmd + Space (Privacy) | Shift + Space (Theme)
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Toggle Privacy Mode (Ctrl + Space)
-      if (e.ctrlKey && e.code === 'Space') {
+      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0
+      const cmdKey = isMac ? e.metaKey : e.ctrlKey
+
+      // Toggle Privacy Mode (Ctrl/Cmd + Space)
+      if (cmdKey && e.code === 'Space') {
         e.preventDefault()
         setIsPrivacyMode(prev => !prev)
       }
@@ -48,8 +51,8 @@ function AppContent() {
         }
       }
 
-      // Quick Add (Ctrl + E)
-      if (e.ctrlKey && e.code === 'KeyE') {
+      // Quick Add (Ctrl/Cmd + E)
+      if (cmdKey && e.code === 'KeyE') {
         e.preventDefault()
         setActiveTab('add')
       }

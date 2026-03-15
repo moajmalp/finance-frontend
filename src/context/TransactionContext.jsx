@@ -48,7 +48,7 @@ export const TransactionProvider = ({ children }) => {
     const [debts, setDebts] = useState([])
     const [alerts, setAlerts] = useState(() => getSafeStorage(STORAGE_KEYS.ALERTS, []))
     const [isPrivacyMode, setIsPrivacyMode] = useState(() => getSafeStorage(STORAGE_KEYS.PRIVACY, false))
-    const [currency, setCurrency] = useState('USD')
+    const [currency, setCurrency] = useState('INR')
     const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone)
     const [subscriptionKeywords, setSubscriptionKeywords] = useState(DEFAULT_SUB_KEYWORDS)
     const [goals, setGoals] = useState([])
@@ -63,10 +63,10 @@ export const TransactionProvider = ({ children }) => {
     // Track bill reminders sent per day (subscriptions, debts, goals)
     const [billReminderState, setBillReminderState] = useState({})
 
-    const currencySymbol = useMemo(() => currency === 'INR' ? '₹' : '$', [currency])
+    const currencySymbol = '₹'
 
 
-    const { isAuthenticated, user, updateUserCredentials = () => Promise.resolve(false), updateUserProfile = () => Promise.resolve(false) } = useAuth()
+    const { isAuthenticated, user, logout, updateUserCredentials = () => Promise.resolve(false), updateUserProfile = () => Promise.resolve(false) } = useAuth()
 
     const [activityLog, setActivityLog] = useState(() => getSafeStorage(STORAGE_KEYS.LOGS, []))
     const [insights, setInsights] = useState([])
@@ -114,7 +114,9 @@ export const TransactionProvider = ({ children }) => {
                 setGoals(goalsData)
 
                 if (configData) {
-                    setCurrency(configData.currency || 'USD')
+                    // Force migrate USD users to INR as per system-wide migration
+                    const backendCurrency = configData.currency || 'INR'
+                    setCurrency(backendCurrency === 'USD' ? 'INR' : backendCurrency)
                     setTimezone(configData.timezone || 'UTC')
                     setIsPrivacyMode(configData.is_privacy_mode || false)
                     if (configData.categories) {
@@ -410,8 +412,28 @@ export const TransactionProvider = ({ children }) => {
             await api.deleteVault(id)
             setAccounts(prev => prev.filter(a => a.id !== id))
             logActivity('Vault Decommissioned', `Vault removed from system`)
+            toast.success('Vault deleted successfully')
         } catch (e) {
             console.error("Failed to delete vault", e)
+            toast.error('Failed to delete vault')
+        }
+    }
+
+    const updateAccount = async (id, updatedData) => {
+        try {
+            // Map camelCase to snake_case if necessary
+            const payload = { ...updatedData }
+            if (payload.initialBalance) { payload.initial_balance = parseFloat(payload.initialBalance); delete payload.initialBalance }
+            
+            const updated = await api.updateVault(id, payload)
+            setAccounts(prev => prev.map(a => a.id === id ? updated : a))
+            logActivity('Vault Updated', `Changes applied to ${updated.name}`)
+            toast.success('Vault updated successfully')
+            return updated
+        } catch (e) {
+            console.error("Failed to update vault", e)
+            toast.error('Failed to update vault')
+            throw e
         }
     }
 
@@ -717,6 +739,7 @@ export const TransactionProvider = ({ children }) => {
             deleteTransaction,
             addTransfer,
             addAccount,
+            updateAccount,
             deleteAccount,
             addSubscription,
             deleteSubscription,
@@ -748,7 +771,8 @@ export const TransactionProvider = ({ children }) => {
             enableBudgetAlerts,
             setEnableBudgetAlerts,
             enableEmailBudgetAlerts,
-            setEnableEmailBudgetAlerts
+            setEnableEmailBudgetAlerts,
+            logout
         }}>
             {children}
         </TransactionContext.Provider>

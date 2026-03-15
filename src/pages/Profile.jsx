@@ -109,7 +109,7 @@ const Profile = () => {
             title: 'Preferences',
             icon: Globe,
             items: [
-                { label: 'Currency', status: 'USD ($)', type: 'select' },
+                { label: 'Currency', status: 'INR (₹)', type: 'select' },
                 { label: 'Language', status: 'English (US)', type: 'select' },
                 { label: 'Default View', status: 'Dashboard', type: 'select' },
             ]

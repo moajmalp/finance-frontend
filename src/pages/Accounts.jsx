@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Wallet, Landmark, CreditCard, Banknote, Plus, ArrowRightLeft, TrendingUp, TrendingDown } from 'lucide-react'
+import { Wallet, Landmark, CreditCard, Banknote, Plus, ArrowRightLeft, TrendingUp, TrendingDown, Edit3, Trash2 } from 'lucide-react'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import { useTransactions } from '../context/TransactionContext'
@@ -17,7 +17,7 @@ import { GridSkeleton } from '../skeletons/GridSkeleton'
 
 const Accounts = () => {
     const isLoading = useMockLoading()
-    const { accounts, addTransfer, netWorthDelta, liabilities, addAccount, calculateBalance, currencySymbol } = useTransactions()
+    const { accounts, addTransfer, netWorthDelta, liabilities, addAccount, updateAccount, deleteAccount, calculateBalance, currencySymbol } = useTransactions()
 
     const [isTransferModalOpen, setIsTransferModalOpen] = useState(false)
     const [isAddModalOpen, setIsAddModalOpen] = useState(false)
@@ -29,6 +29,8 @@ const Accounts = () => {
         amount: '',
         date: new Date().toISOString().split('T')[0]
     })
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+    const [editingAccount, setEditingAccount] = useState(null)
     const [newAccount, setNewAccount] = useState({
         name: '',
         type: 'BANK',
@@ -81,6 +83,40 @@ const Accounts = () => {
                 setIsConfirmModalOpen(false)
                 setNewAccount({ name: '', type: 'BANK', initialBalance: '', color: 'bg-indigo-500' })
                 toast.success('Vault created')
+            }
+        })
+        setIsConfirmModalOpen(true)
+    }
+
+    const handleEditAccount = (e) => {
+        e.preventDefault()
+        if (!editingAccount.name) return
+
+        setConfirmAction({
+            title: 'Confirm Changes',
+            message: `Apply modifications to "${editingAccount.name}"?`,
+            type: 'primary',
+            onConfirm: async () => {
+                await updateAccount(editingAccount.id, {
+                    name: editingAccount.name,
+                    type: editingAccount.type,
+                    color: editingAccount.color
+                })
+                setIsEditModalOpen(false)
+                setIsConfirmModalOpen(false)
+            }
+        })
+        setIsConfirmModalOpen(true)
+    }
+
+    const handleDeleteAccount = (acc) => {
+        setConfirmAction({
+            title: 'Decommission Vault',
+            message: `Are you sure you want to permanently remove "${acc.name}"? This action cannot be reversed within the ledger.`,
+            type: 'danger',
+            onConfirm: async () => {
+                await deleteAccount(acc.id)
+                setIsConfirmModalOpen(false)
             }
         })
         setIsConfirmModalOpen(true)
@@ -190,6 +226,27 @@ const Accounts = () => {
                             >
                                 <Card className="hover:shadow-premium hover:-translate-y-1.5 hover:scale-[1.01] transition-all duration-500 cursor-pointer group h-full flex flex-col border-border/40 dark:border-white/5">
                                     <div className="flex items-start justify-between">
+                                        <div className="flex gap-2 relative z-20">
+                                            <button 
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    setEditingAccount({...acc})
+                                                    setIsEditModalOpen(true)
+                                                }}
+                                                className="p-2 rounded-xl bg-card border border-border/50 text-muted-foreground hover:text-primary transition-all shadow-sm"
+                                            >
+                                                <Edit3 size={16} />
+                                            </button>
+                                            <button 
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    handleDeleteAccount(acc)
+                                                }}
+                                                className="p-2 rounded-xl bg-card border border-border/50 text-muted-foreground hover:text-rose-500 transition-all shadow-sm"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
                                         <div className={cn("p-4 rounded-2xl text-white shadow-lg group-hover:rotate-6 transition-transform duration-500", acc.color || 'bg-gray-500')}>
                                             <Icon size={24} />
                                         </div>
@@ -278,6 +335,41 @@ const Accounts = () => {
                     </div>
                     <Button type="submit" className="w-full py-4 text-lg font-black shadow-xl">Create Vault</Button>
                 </form>
+            </Modal>
+            {/* Edit Account Modal */}
+            <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title="Update Vault Parameters">
+                {editingAccount && (
+                    <form onSubmit={handleEditAccount} className="space-y-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <Input label="Account Name" placeholder="e.g. Savings Hub" value={editingAccount.name} onChange={(e) => setEditingAccount({ ...editingAccount, name: e.target.value })} required />
+                            <Dropdown
+                                label="Vault Type"
+                                options={[
+                                    { label: 'Bank Account', value: 'BANK' },
+                                    { label: 'Credit Card', value: 'CREDIT_CARD' },
+                                    { label: 'Cash Wallet', value: 'CASH' },
+                                    { label: 'Investment Wallet', value: 'WALLET' }
+                                ]}
+                                value={editingAccount.type}
+                                onChange={(val) => setEditingAccount({ ...editingAccount, type: val })}
+                            />
+                        </div>
+                        <div className="space-y-3">
+                            <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest ml-1">Identity Color</label>
+                            <div className="flex flex-wrap gap-3">
+                                {colors.map(c => (
+                                    <button
+                                        key={c.value}
+                                        type="button"
+                                        onClick={() => setEditingAccount({ ...editingAccount, color: c.value })}
+                                        className={`h-10 w-10 rounded-xl transition-all ${c.value} ${editingAccount.color === c.value ? 'ring-4 ring-primary/30 scale-110 shadow-lg' : 'opacity-60 hover:opacity-100'}`}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                        <Button type="submit" className="w-full py-4 text-lg font-black shadow-xl">Apply Modifications</Button>
+                    </form>
+                )}
             </Modal>
             <ConfirmationModal
                 isOpen={isConfirmModalOpen}
