@@ -37,7 +37,7 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, confirm
                     </Button>
                     <Button
                         onClick={() => {
-                            onConfirm()
+                            onConfirm?.()
                             onClose()
                         }}
                         className={cn(

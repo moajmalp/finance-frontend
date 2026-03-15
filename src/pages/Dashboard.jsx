@@ -51,7 +51,7 @@ const Dashboard = () => {
 
     // Compute Category Breakdown for Pie Chart
     const categoryTotals = filteredTransactions
-        .filter(t => t.type === 'expense')
+        .filter(t => t.type === 'EXPENSE')
         .reduce((acc, t) => {
             acc[t.category] = (acc[t.category] || 0) + t.amount
             return acc
@@ -244,7 +244,7 @@ const Dashboard = () => {
                             {budgets && Object.entries(budgets).length > 0 ? (
                                 Object.entries(budgets).slice(0, 4).map(([cat, limit]) => {
                                     const spent = filteredTransactions
-                                        .filter(t => t.category === cat && t.type === 'expense')
+                                        .filter(t => t.category === cat && t.type === 'EXPENSE')
                                         .reduce((acc, t) => acc + t.amount, 0)
                                     const percent = Math.min((spent / limit) * 100, 100)
                                     const color = percent >= 100 ? 'bg-rose-500' : percent >= 80 ? 'bg-amber-500' : 'bg-emerald-500'

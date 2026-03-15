@@ -88,10 +88,10 @@ const Transactions = () => {
             acc[day] = { income: 0, expense: 0, net: 0, transactions: [] }
         }
         const amount = parseFloat(t.amount) || 0
-        if (t.type === 'income') {
+        if (t.type === 'INCOME') {
             acc[day].income += amount
             acc[day].net += amount
-        } else if (t.type === 'expense') {
+        } else if (t.type === 'EXPENSE') {
             acc[day].expense += amount
             acc[day].net -= amount
         }
@@ -151,8 +151,8 @@ const Transactions = () => {
 
     const filterOptions = [
         { label: 'All Transactions', value: 'all' },
-        { label: 'Income Only', value: 'income' },
-        { label: 'Expenses Only', value: 'expense' }
+        { label: 'Income Only', value: 'INCOME' },
+        { label: 'Expenses Only', value: 'EXPENSE' }
     ]
 
     if (isLoading) return <ListSkeleton />
@@ -228,8 +228,8 @@ const Transactions = () => {
                                     <Dropdown
                                         options={[
                                             { label: 'All Flows', value: 'all' },
-                                            { label: 'Inflow Only', value: 'income' },
-                                            { label: 'Outflow Only', value: 'expense' }
+                                            { label: 'Inflow Only', value: 'INCOME' },
+                                            { label: 'Outflow Only', value: 'EXPENSE' }
                                         ]}
                                         value={filters.type}
                                         onChange={(val) => setFilters({ ...filters, type: val })}
@@ -321,9 +321,9 @@ const Transactions = () => {
                                                 <div className="flex items-center gap-4">
                                                     <div className={cn(
                                                         "flex h-12 w-12 shrink-0 items-center justify-center rounded-[1rem] transition-transform group-hover:scale-110 shadow-sm",
-                                                        (t.type === 'income' ? 'bg-emerald-theme text-emerald-theme' : 'bg-rose-theme text-rose-theme')
+                                                        (t.type === 'INCOME' ? 'bg-emerald-theme text-emerald-theme' : 'bg-rose-theme text-rose-theme')
                                                     )}>
-                                                        {(t.type === 'income' ? <TrendingUp size={20} /> : <TrendingDown size={20} />)}
+                                                        {(t.type === 'INCOME' ? <TrendingUp size={20} /> : <TrendingDown size={20} />)}
                                                     </div>
                                                     <div>
                                                         <span className="font-bold text-foreground block">{t.category}</span>
@@ -332,8 +332,8 @@ const Transactions = () => {
                                             </td>
                                             <td className="px-8 py-6 text-sm font-medium text-muted-foreground whitespace-nowrap">{t.date}</td>
                                             <td className="px-8 py-6 text-sm text-muted-foreground max-w-[200px] truncate italic">{t.note || '-'}</td>
-                                            <td className={`px-8 py-6 text-right font-black text-lg ${t.type === 'income' ? 'text-emerald-theme' : 'text-foreground'}`}>
-                                                {t.type === 'income' ? '+' : '-'}
+                                            <td className={`px-8 py-6 text-right font-black text-lg ${t.type === 'INCOME' ? 'text-emerald-theme' : 'text-foreground'}`}>
+                                                {t.type === 'INCOME' ? '+' : '-'}
                                                 <PrivacyValue>{currencySymbol}</PrivacyValue>
                                                 <PrivacyValue>{t.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</PrivacyValue>
                                             </td>
@@ -375,9 +375,9 @@ const Transactions = () => {
                                             <div className="flex items-center gap-4">
                                                 <div className={cn(
                                                     "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl shadow-sm",
-                                                    (t.type === 'income' ? 'bg-emerald-theme text-emerald-theme' : 'bg-rose-theme text-rose-theme')
+                                                    (t.type === 'INCOME' ? 'bg-emerald-theme text-emerald-theme' : 'bg-rose-theme text-rose-theme')
                                                 )}>
-                                                    {(t.type === 'income' ? <TrendingUp size={24} /> : <TrendingDown size={24} />)}
+                                                    {(t.type === 'INCOME' ? <TrendingUp size={24} /> : <TrendingDown size={24} />)}
                                                 </div>
                                                 <div className="space-y-1">
                                                     <p className="font-black text-foreground text-base tracking-tight">{t.category}</p>
@@ -387,8 +387,8 @@ const Transactions = () => {
                                                 </div>
                                             </div>
                                             <div className="flex flex-col items-end gap-3">
-                                                <p className={`font-black text-lg tracking-tight ${t.type === 'income' ? 'text-emerald-theme' : 'text-foreground'}`}>
-                                                    {t.type === 'income' ? '+' : '-'}
+                                                <p className={`font-black text-lg tracking-tight ${t.type === 'INCOME' ? 'text-emerald-theme' : 'text-foreground'}`}>
+                                                    {t.type === 'INCOME' ? '+' : '-'}
                                                     <PrivacyValue>{currencySymbol}</PrivacyValue>
                                                     <PrivacyValue>{t.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</PrivacyValue>
                                                 </p>
@@ -544,9 +544,9 @@ const Transactions = () => {
                                                 <div className="text-right">
                                                     <p className={cn(
                                                         'text-sm font-black',
-                                                        t.type === 'income' ? 'text-emerald-theme' : 'text-foreground'
+                                                        t.type === 'INCOME' ? 'text-emerald-theme' : 'text-foreground'
                                                     )}>
-                                                        {t.type === 'income' ? '+' : '-'}
+                                                        {t.type === 'INCOME' ? '+' : '-'}
                                                         <PrivacyValue>{currencySymbol}</PrivacyValue>
                                                         <PrivacyValue>{t.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</PrivacyValue>
                                                     </p>

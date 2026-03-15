@@ -3,7 +3,7 @@ import toast from 'react-hot-toast';
 
 // --- Types & Interfaces ---
 
-export type VaultType = 'bank' | 'cash' | 'credit_card' | 'wallet';
+export type VaultType = 'BANK' | 'CASH' | 'CREDIT_CARD' | 'WALLET';
 
 export interface VaultData {
     name: string;
@@ -13,7 +13,7 @@ export interface VaultData {
     fluidity_score?: number;
 }
 
-export type TransactionType = 'income' | 'expense';
+export type TransactionType = 'INCOME' | 'EXPENSE';
 
 export interface TransactionData {
     amount: number;
@@ -28,7 +28,7 @@ export interface TransactionData {
     receipt_url?: string;
 }
 
-export type SubscriptionFrequency = 'monthly' | 'yearly';
+export type SubscriptionFrequency = 'MONTHLY' | 'YEARLY';
 
 export interface SubscriptionData {
     name: string;
@@ -41,7 +41,7 @@ export interface SubscriptionData {
     is_active?: boolean;
 }
 
-export type DebtType = 'owed_to_me' | 'i_owe';
+export type DebtType = 'OWED_TO_ME' | 'I_OWE';
 
 export interface DebtData {
     person_name: string;
@@ -87,7 +87,7 @@ export interface BudgetAlertEmailPayload {
 // --- Axios Instance ---
 
 const apiClient = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'https://my-finance-backend-2csw.onrender.com',
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
     headers: {
         'Content-Type': 'application/json',
     },

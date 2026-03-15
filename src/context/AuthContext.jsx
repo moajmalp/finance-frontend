@@ -36,17 +36,23 @@ export const AuthProvider = ({ children }) => {
     }, [isAuthenticated, loadProfile]);
 
     const login = async (username, password) => {
+        console.log("AuthContext: Starting login attempt for:", username);
         try {
             const data = await apiLogin(username, password);
+            console.log("AuthContext: Login API response:", data);
             const accessToken = data.access_token;
+            if (!accessToken) {
+                throw new Error("No access token received from server");
+            }
             localStorage.setItem('token', accessToken);
             setToken(accessToken);
             setIsAuthenticated(true);
             toast.success('Successfully logged in');
             return true;
         } catch (error) {
-            console.error("Login failed", error);
-            toast.error(error.response?.data?.detail || 'Login failed');
+            console.error("AuthContext: Login failed", error);
+            const errorMessage = error.response?.data?.detail || error.message || 'Login failed';
+            toast.error(errorMessage);
             return false;
         }
     };

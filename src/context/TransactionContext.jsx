@@ -32,8 +32,8 @@ const getSafeStorage = (key, defaultValue) => {
 }
 
 const DEFAULT_CATEGORIES = {
-    expense: ['Food', 'Rent', 'Transport', 'Entertainment', 'Shopping', 'Health', 'Bills', 'Subscriptions', 'Other'],
-    income: ['Salary', 'Freelance', 'Investment', 'Gift', 'Other']
+    EXPENSE: ['Food', 'Rent', 'Transport', 'Entertainment', 'Shopping', 'Health', 'Bills', 'Subscriptions', 'Other'],
+    INCOME: ['Salary', 'Freelance', 'Investment', 'Gift', 'Other']
 }
 
 const DEFAULT_SUB_KEYWORDS = ['Netflix', 'Spotify', 'Youtube', 'Prime', 'Hotstar', 'Gym', 'Wifi', 'Rent']
@@ -117,7 +117,13 @@ export const TransactionProvider = ({ children }) => {
                     setCurrency(configData.currency || 'USD')
                     setTimezone(configData.timezone || 'UTC')
                     setIsPrivacyMode(configData.is_privacy_mode || false)
-                    if (configData.categories) setCategories(configData.categories)
+                    if (configData.categories) {
+                        const normalizedCategories = {}
+                        Object.entries(configData.categories).forEach(([key, value]) => {
+                            normalizedCategories[key.toUpperCase()] = value
+                        })
+                        setCategories(normalizedCategories)
+                    }
                     if (configData.subscription_keywords) setSubscriptionKeywords(configData.subscription_keywords)
                 }
             } catch (error) {
@@ -136,8 +142,8 @@ export const TransactionProvider = ({ children }) => {
             .filter(t => t.account_id === accountId)
             .reduce((sum, t) => {
                 const amount = parseFloat(t.amount) || 0
-                if (t.type === 'income') return sum + amount
-                if (t.type === 'expense') return sum - amount
+                if (t.type === 'INCOME') return sum + amount
+                if (t.type === 'EXPENSE') return sum - amount
                 return sum
             }, 0)
 
@@ -150,17 +156,17 @@ export const TransactionProvider = ({ children }) => {
         const currentMonthTransactions = transactions.filter(t => t.date.startsWith(selectedMonth))
 
         const income = currentMonthTransactions
-            .filter(t => t.type === 'income')
+            .filter(t => t.type === 'INCOME')
             .reduce((acc, t) => acc + (parseFloat(t.amount) || 0), 0)
 
         const expenses = currentMonthTransactions
-            .filter(t => t.type === 'expense')
+            .filter(t => t.type === 'EXPENSE')
             .reduce((acc, t) => acc + (parseFloat(t.amount) || 0), 0)
 
         const balance = accounts.reduce((acc, curr) => acc + (calculateBalance(curr.id) || 0), 0)
 
         const liabilities = accounts
-            .filter(acc => acc.type === 'credit_card')
+            .filter(acc => acc.type === 'CREDIT_CARD')
             .reduce((acc, curr) => {
                 const bal = calculateBalance(curr.id) || 0
                 return acc + (bal < 0 ? Math.abs(bal) : 0)
@@ -203,7 +209,7 @@ export const TransactionProvider = ({ children }) => {
             const cat = t.category || 'Uncategorized'
             const amount = parseFloat(t.amount) || 0
             if (!acc[cat]) acc[cat] = 0
-            if (t.type === 'expense') {
+            if (t.type === 'EXPENSE') {
                 acc[cat] += amount
             }
             return acc
@@ -379,18 +385,24 @@ export const TransactionProvider = ({ children }) => {
 
     // Actions
     const addAccount = async (account) => {
-        const payload = {
-            name: account.name,
-            type: account.type,
-            initial_balance: parseFloat(account.initialBalance || account.initial_balance),
-            color: account.color,
-            fluidity_score: 0.65
+        try {
+            const payload = {
+                name: account.name,
+                type: account.type,
+                initial_balance: parseFloat(account.initialBalance),
+                color: account.color,
+                fluidity_score: 0.65
+            }
+            const newVault = await api.createVault(payload)
+            setAccounts(prev => [...prev, newVault]) // Ideally refetch or update state
+            logActivity('Account Created', `New vault: ${newVault.name}`)
+            toast.success(`Vault '${newVault.name}' created`)
+            return newVault
+        } catch (error) {
+            console.error("Failed to create vault:", error.response?.data || error.message)
+            toast.error(`Creation failed: ${error.response?.data?.detail || 'Server error'}`)
+            throw error
         }
-        const newVault = await api.createVault(payload)
-        setAccounts(prev => [...prev, newVault]) // Ideally refetch or update state
-        logActivity('Account Created', `New vault: ${newVault.name}`)
-        toast.success(`Vault '${newVault.name}' created`)
-        return newVault
     }
 
     const deleteAccount = async (id) => {
@@ -420,7 +432,7 @@ export const TransactionProvider = ({ children }) => {
         setTransactions(prev => [newTx, ...prev])
 
         logActivity(
-            newTx.type === 'income' ? 'Income Received' : 'Expense Logged',
+            newTx.type === 'INCOME' ? 'Income Received' : 'Expense Logged',
             `${newTx.category}: ${currencySymbol}${newTx.amount}`
         )
 
@@ -428,7 +440,7 @@ export const TransactionProvider = ({ children }) => {
             await addDebt({
                 person_name: payload.split_with || 'Someone',
                 amount: payload.split_amount,
-                type: 'owed_to_me',
+                type: 'OWED_TO_ME',
                 note: `Split for ${payload.category}`,
                 transaction_id: newTx.id
             })
@@ -443,7 +455,7 @@ export const TransactionProvider = ({ children }) => {
             // Out
             await addTransaction({
                 amount: parseFloat(amount),
-                type: 'expense',
+                type: 'EXPENSE',
                 category: 'Transfer',
                 accountId: fromId,
                 date: isoDate,
@@ -452,7 +464,7 @@ export const TransactionProvider = ({ children }) => {
             // In
             await addTransaction({
                 amount: parseFloat(amount),
-                type: 'income',
+                type: 'INCOME',
                 category: 'Transfer',
                 accountId: toId,
                 date: isoDate,

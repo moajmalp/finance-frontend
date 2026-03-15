@@ -19,7 +19,7 @@ const SettingsPage = () => {
     const isLoading = useMockLoading()
     const { categories, addCategory, deleteCategory, budgets, setBudget, isPrivacyMode, setIsPrivacyMode, currency, setCurrency, timezone, setTimezone, currencySymbol, subscriptionKeywords, addSubscriptionKeyword, deleteSubscriptionKeyword, enableBudgetAlerts, setEnableBudgetAlerts, enableEmailBudgetAlerts, setEnableEmailBudgetAlerts } = useTransactions()
 
-    const [activeType, setActiveType] = useState('expense')
+    const [activeType, setActiveType] = useState('EXPENSE')
     const [newCategory, setNewCategory] = useState('')
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
     const [confirmAction, setConfirmAction] = useState({ title: '', message: '', onConfirm: () => { } })
@@ -110,7 +110,7 @@ const SettingsPage = () => {
                     </div>
 
                     <div className="flex p-1.5 bg-card-muted/50 border border-border/50 rounded-2xl">
-                        {['expense', 'income'].map((type) => (
+                        {['EXPENSE', 'INCOME'].map((type) => (
                             <button
                                 key={type}
                                 onClick={() => setActiveType(type)}
@@ -132,6 +132,7 @@ const SettingsPage = () => {
                             className="flex-1 h-12 rounded-xl bg-card/50"
                             value={newCategory}
                             onChange={(e) => setNewCategory(e.target.value)}
+                            required
                         />
                         <Button type="submit" className="h-12 w-12 p-0 rounded-xl group shrink-0 shadow-lg shadow-primary/20">
                             <Plus size={24} className="group-hover:rotate-90 transition-transform" />

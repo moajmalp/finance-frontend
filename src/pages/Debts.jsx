@@ -25,13 +25,13 @@ const Debts = () => {
     const [newDebt, setNewDebt] = useState({
         person: '',
         amount: '',
-        type: 'owed_to_me',
+        type: 'OWED_TO_ME',
         date: new Date().toISOString().split('T')[0],
         note: ''
     })
 
-    const totalOwedToMe = (debts || []).filter(d => !d.is_settled && d.type === 'owed_to_me').reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0)
-    const totalIOwe = (debts || []).filter(d => !d.is_settled && d.type === 'i_owe').reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0)
+    const totalOwedToMe = (debts || []).filter(d => !d.is_settled && d.type === 'OWED_TO_ME').reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0)
+    const totalIOwe = (debts || []).filter(d => !d.is_settled && d.type === 'I_OWE').reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0)
 
     const handleAdd = (e) => {
         e.preventDefault()
@@ -39,7 +39,7 @@ const Debts = () => {
 
         setConfirmAction({
             title: 'Verify Capital Entry',
-            message: `Do you want to record a ${currencySymbol}${newDebt.amount} ${newDebt.type === 'owed_to_me' ? 'receivable from' : 'payable to'} ${newDebt.person}?`,
+            message: `Do you want to record a ${currencySymbol}${newDebt.amount} ${newDebt.type === 'OWED_TO_ME' ? 'receivable from' : 'payable to'} ${newDebt.person}?`,
             type: 'primary',
             onConfirm: async () => {
                 await addDebt({
@@ -51,7 +51,7 @@ const Debts = () => {
                 setNewDebt({
                     person: '',
                     amount: '',
-                    type: 'owed_to_me',
+                    type: 'OWED_TO_ME',
                     date: new Date().toISOString().split('T')[0],
                     note: ''
                 })
@@ -64,7 +64,7 @@ const Debts = () => {
     const handleSettleClick = (debt) => {
         setConfirmAction({
             title: 'Reconciliation Check',
-            message: `Confirm that total settlement of ${currencySymbol}${debt.amount} has been ${debt.type === 'owed_to_me' ? 'received from' : 'paid to'} ${debt.person_name}.`,
+            message: `Confirm that total settlement of ${currencySymbol}${debt.amount} has been ${debt.type === 'OWED_TO_ME' ? 'received from' : 'paid to'} ${debt.person_name}.`,
             type: 'primary',
             onConfirm: async () => {
                 await settleDebt(debt.id)
@@ -160,7 +160,7 @@ const Debts = () => {
                                     <div className="flex items-center gap-6">
                                         <div className={cn(
                                             "h-16 w-16 rounded-[1.5rem] flex items-center justify-center transition-all group-hover:scale-110",
-                                            debt.type === 'owed_to_me' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'
+                                            debt.type === 'OWED_TO_ME' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'
                                         )}>
                                             <Users size={28} />
                                         </div>
@@ -174,9 +174,9 @@ const Debts = () => {
                                         <div className="sm:text-right mr-4">
                                             <h4 className={cn(
                                                 "text-2xl font-black tracking-tight",
-                                                debt.type === 'owed_to_me' ? 'text-emerald-500' : 'text-rose-500'
+                                                debt.type === 'OWED_TO_ME' ? 'text-emerald-500' : 'text-rose-500'
                                             )}>
-                                                {debt.type === 'owed_to_me' ? '+' : '-'}
+                                                {debt.type === 'OWED_TO_ME' ? '+' : '-'}
                                                 <PrivacyValue>{currencySymbol}</PrivacyValue>
                                                 <PrivacyValue>{debt.amount.toLocaleString()}</PrivacyValue>
                                             </h4>
@@ -228,7 +228,7 @@ const Debts = () => {
                                 <PrivacyValue>{currencySymbol}</PrivacyValue>
                                 <PrivacyValue>{debt.amount.toLocaleString()}</PrivacyValue>
                             </p>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase">{debt.type === 'owed_to_me' ? 'Received' : 'Paid'}</p>
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase">{debt.type === 'OWED_TO_ME' ? 'Received' : 'Paid'}</p>
                         </Card>
                     ))}
                 </div>
@@ -255,8 +255,8 @@ const Debts = () => {
                         <Dropdown
                             label="Flow Direction"
                             options={[
-                                { label: 'Owed to Me', value: 'owed_to_me' },
-                                { label: 'I Owe Him/Her', value: 'i_owe' }
+                                { label: 'Owed to Me', value: 'OWED_TO_ME' },
+                                { label: 'I Owe Him/Her', value: 'I_OWE' }
                             ]}
                             value={newDebt.type}
                             onChange={val => setNewDebt({ ...newDebt, type: val })}
