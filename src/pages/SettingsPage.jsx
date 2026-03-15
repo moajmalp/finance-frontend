@@ -14,6 +14,7 @@ import { useTransactions } from '../context/TransactionContext'
 import { useSecurity } from '../context/SecurityContext'
 import haptics from '../lib/haptics'
 import SecurityLogModal from '../components/security/SecurityLogModal'
+import BiometricModal from '../components/security/BiometricModal'
 
 import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
@@ -29,10 +30,12 @@ const SettingsPage = () => {
         isBiometricEnabled, setIsBiometricEnabled, 
         isPatternLockEnabled, setIsPatternLockEnabled, 
         isIntruderSnapshotEnabled, setIsIntruderSnapshotEnabled,
-        setPIN, verifyPIN, clearPIN, deregisterBiometrics, savedPINHash
+        setPIN, verifyPIN, clearPIN, deregisterBiometrics, savedPINHash,
+        biometricCredentialId
     } = useSecurity()
 
     const [showLogModal, setShowLogModal] = useState(false)
+    const [showBiometricModal, setShowBiometricModal] = useState(false)
     const [isVerifyingToChange, setIsVerifyingToChange] = useState(false)
     const [currentPinCheck, setCurrentPinCheck] = useState('')
     const [pinChangeError, setPinChangeError] = useState('')
@@ -444,7 +447,14 @@ const SettingsPage = () => {
                                         </div>
                                     </div>
                                     <button
-                                        onClick={() => { haptics.light(); setIsBiometricEnabled(!isBiometricEnabled); }}
+                                        onClick={() => {
+                                            haptics.light();
+                                            if (!isBiometricEnabled) {
+                                                setShowBiometricModal(true);
+                                            } else {
+                                                deregisterBiometrics();
+                                            }
+                                        }}
                                         className={cn(
                                             "relative flex h-8 w-14 items-center rounded-full p-1 transition-colors focus:outline-none",
                                             isBiometricEnabled ? "bg-primary" : "bg-muted"
@@ -458,7 +468,7 @@ const SettingsPage = () => {
                                         />
                                     </button>
                                 </div>
-                                {isBiometricEnabled && (
+                                {isBiometricEnabled && biometricCredentialId ? (
                                     <button
                                         onClick={() => { haptics.medium(); deregisterBiometrics(); }}
                                         className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-rose-500 transition-all pt-2 border-t border-white/5"
@@ -466,7 +476,15 @@ const SettingsPage = () => {
                                         <Trash2 size={12} />
                                         Deregister Credentials
                                     </button>
-                                )}
+                                ) : !isBiometricEnabled ? (
+                                    <button
+                                        onClick={() => { haptics.light(); setShowBiometricModal(true); }}
+                                        className="flex items-center gap-2 text-[10px] font-black text-indigo-400 uppercase tracking-widest hover:text-indigo-300 transition-all pt-2 border-t border-white/5"
+                                    >
+                                        <Fingerprint size={12} />
+                                        Tap to Register Fingerprint
+                                    </button>
+                                ) : null}
                             </div>
 
                             {/* PIN Card */}
@@ -636,6 +654,11 @@ const SettingsPage = () => {
                         <SecurityLogModal 
                             isOpen={showLogModal} 
                             onClose={() => setShowLogModal(false)} 
+                        />
+                        <BiometricModal
+                            isOpen={showBiometricModal}
+                            onClose={() => setShowBiometricModal(false)}
+                            onSuccess={() => setShowBiometricModal(false)}
                         />
                     </div>
 

@@ -15,7 +15,10 @@ const PINLockOverlay = () => {
         verifyPIN, 
         clearPIN,
         isIntruderSnapshotEnabled,
-        logIntruder 
+        logIntruder,
+        isBiometricEnabled,
+        biometricCredentialId,
+        authenticateBiometrically,
     } = useSecurity();
 
     const [pin, setPin] = useState('');
@@ -26,9 +29,30 @@ const PINLockOverlay = () => {
     const [securityAnswer, setSecurityAnswer] = useState('');
     const [firstPin, setFirstPin] = useState(null);
     const [cameraError, setCameraError] = useState(null);
+    const [biometricStatus, setBiometricStatus] = useState('idle'); // idle, scanning, failed
 
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
+
+    // Auto-trigger biometric auth when lock screen appears
+    useEffect(() => {
+        if (isAppLocked && isBiometricEnabled && biometricCredentialId && !isSettingMode) {
+            triggerBiometricAuth();
+        }
+    }, [isAppLocked]);
+
+    const triggerBiometricAuth = async () => {
+        setBiometricStatus('scanning');
+        const success = await authenticateBiometrically();
+        if (success) {
+            setBiometricStatus('idle');
+            setStatus('SUCCESS');
+            setTimeout(() => setIsAppLocked(false), 400);
+        } else {
+            setBiometricStatus('failed');
+            haptics.error();
+        }
+    };
 
     useEffect(() => {
         if (isIntruderSnapshotEnabled) {
@@ -268,6 +292,30 @@ const PINLockOverlay = () => {
                             ? "Use 4-6 digits for maximum session integrity."
                             : "Enter credentials to initialize sync."}
                     </p>
+
+                    {/* Biometric section */}
+                    {isBiometricEnabled && biometricCredentialId && !isSettingMode && !isResetMode && (
+                        <div className="flex flex-col items-center gap-3 pt-2 border-t border-white/5">
+                            {biometricStatus === 'scanning' ? (
+                                <motion.div
+                                    animate={{ scale: [1, 1.15, 1], opacity: [0.6, 1, 0.6] }}
+                                    transition={{ duration: 1.5, repeat: Infinity }}
+                                    className="flex flex-col items-center gap-2"
+                                >
+                                    <Fingerprint size={28} className="text-indigo-400" />
+                                    <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Scanning...</span>
+                                </motion.div>
+                            ) : (
+                                <button
+                                    onClick={() => { haptics.medium(); triggerBiometricAuth(); }}
+                                    className="flex items-center gap-2 text-[10px] font-black text-indigo-400 uppercase tracking-widest hover:text-indigo-300 transition-all"
+                                >
+                                    <Fingerprint size={14} />
+                                    {biometricStatus === 'failed' ? 'Try Fingerprint Again' : 'Use Fingerprint'}
+                                </button>
+                            )}
+                        </div>
+                    )}
                     
                     <div className="flex items-center justify-center gap-6 opacity-20">
                         <Fingerprint size={16} />
