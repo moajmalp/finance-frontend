@@ -2,10 +2,10 @@ import { cn } from '../../lib/utils'
 
 const Button = ({ className, variant = 'primary', ...props }) => {
     const variants = {
-        primary: 'bg-primary text-white shadow-twilight hover:shadow-[0_0_30px_rgba(168,85,247,0.4)] hover:-translate-y-1',
-        secondary: 'background: rgba(255, 255, 255, 0.05) border border-white/10 text-white backdrop-blur-md hover:bg-white/10',
-        outline: 'border border-white/10 bg-white/5 backdrop-blur-md text-white hover:bg-white/10 hover:-translate-y-0.5',
-        ghost: 'text-slate-400 hover:text-white hover:bg-white/5 transition-all',
+        primary: 'bg-primary text-white shadow-twilight hover:shadow-primary/30 hover:-translate-y-1',
+        secondary: 'bg-card-muted border border-border/50 text-foreground backdrop-blur-md hover:bg-card-muted/80',
+        outline: 'border border-border/50 bg-transparent backdrop-blur-md text-foreground hover:bg-muted hover:-translate-y-0.5',
+        ghost: 'text-muted-foreground hover:text-foreground hover:bg-muted transition-all',
     }
 
     return (

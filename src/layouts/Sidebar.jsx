@@ -28,8 +28,8 @@ const Sidebar = ({ activeTab, setActiveTab, onOpenNotifications, unreadNotificat
 
     return (
         <aside className={cn(
-            "fixed left-0 top-0 hidden h-screen glass-premium border-r border-border/50 p-6 lg:flex flex-col z-40 transition-all duration-500",
-            isCollapsed ? "w-24 items-center" : "w-64"
+            "fixed left-0 top-0 hidden h-screen glass-premium border-r border-border/50 lg:flex flex-col z-40 transition-all duration-500",
+            isCollapsed ? "w-24 items-center p-4 py-6" : "w-64 p-6"
         )}>
             {/* Logo Section */}
             <div className={cn(
@@ -43,7 +43,7 @@ const Sidebar = ({ activeTab, setActiveTab, onOpenNotifications, unreadNotificat
                     <img src="/flux_icon.png" alt="FLUX Logo" className="h-11 w-11 shrink-0 shadow-[0_0_20px_rgba(168,85,247,0.4)] group-hover/logo:scale-110 transition-transform duration-300 rounded-2xl" />
                     {!isCollapsed && (
                         <div className="animate-in fade-in slide-in-from-left-2 duration-300">
-                            <h1 className="text-xl font-black text-gradient tracking-tight">FLUX</h1>
+                            <h1 className="text-xl font-black text-slate-900 dark:text-transparent dark:bg-clip-text dark:bg-linear-to-br dark:from-slate-300 dark:via-white dark:to-slate-400 tracking-tight">FLUX</h1>
                             <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mt-1 opacity-80">Future Finance</p>
                         </div>
                     )}
@@ -62,8 +62,8 @@ const Sidebar = ({ activeTab, setActiveTab, onOpenNotifications, unreadNotificat
             {/* Navigation - Scrollable area */}
 
             <nav className={cn(
-                "flex-1 overflow-y-auto space-y-1.5 pr-2 -mr-2 scrollbar-none w-full",
-                isCollapsed && "flex flex-col items-center"
+                "flex-1 overflow-y-auto space-y-1 pr-2 -mr-2 scrollbar-none w-full",
+                isCollapsed && "flex flex-col items-center gap-1.5"
             )}>
                 {menuItems.map((item) => (
                     <button
@@ -76,11 +76,11 @@ const Sidebar = ({ activeTab, setActiveTab, onOpenNotifications, unreadNotificat
                                 : "w-full px-4 py-4 text-[11px] sm:text-xs font-black uppercase tracking-[0.1em]",
                             activeTab === item.id
                                 ? "bg-gradient-to-r from-primary/30 to-primary/10 text-white shadow-[0_0_20px_rgba(168,85,247,0.15)] ring-1 ring-white/10 translate-x-1"
-                                : "text-slate-400 hover:bg-white/5 hover:text-white hover:translate-x-1"
+                                : "text-slate-400 hover:bg-white/10 hover:text-white"
                         )}
                         title={isCollapsed ? item.label : ""}
                     >
-                        <item.icon size={20} className={cn("shrink-0 transition-transform duration-300 group-hover:scale-110", activeTab === item.id ? "" : "text-muted-foreground")} />
+                        <item.icon size={20} className={cn("shrink-0 transition-transform duration-300 group-hover:scale-110", activeTab === item.id ? "text-white" : "text-muted-foreground group-hover:text-foreground")} />
                         {!isCollapsed && (
                             <span className="tracking-tight animate-in fade-in slide-in-from-left-2 duration-300">{item.label}</span>
                         )}

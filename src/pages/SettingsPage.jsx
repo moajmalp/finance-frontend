@@ -309,7 +309,7 @@ const SettingsPage = () => {
                                 </div>
                                 <div>
                                     <p className="text-sm font-black text-foreground tracking-tight uppercase tracking-widest leading-none">Interface Theme</p>
-                                    <p className="text-[10px] font-bold text-muted-foreground mt-1.5 opacity-60">Visual System Mode (Shift + Space)</p>
+                                    <p className="text-[10px] font-bold text-muted-foreground mt-1.5 opacity-60">Visual System Mode (⇧ + Space)</p>
                                 </div>
                             </div>
                             <ThemeToggle />
@@ -322,7 +322,7 @@ const SettingsPage = () => {
                                 </div>
                                 <div>
                                     <p className="text-sm font-black text-foreground tracking-tight uppercase tracking-widest leading-none">Privacy Vault</p>
-                                    <p className="text-[10px] font-bold text-muted-foreground mt-1.5 opacity-60">Mask Sensitive Data (Ctrl + Space)</p>
+                                    <p className="text-[10px] font-bold text-muted-foreground mt-1.5 opacity-60">Mask Sensitive Data (⌃/⌘ + Space)</p>
                                 </div>
                             </div>
                             <button
@@ -424,8 +424,8 @@ const SettingsPage = () => {
                                 </div>
                                 <Dropdown
                                     options={[
-                                        { label: 'USD ($)', value: 'USD' },
-                                        { label: 'INR (₹)', value: 'INR' }
+                                        { label: 'INR (₹)', value: 'INR' },
+                                        { label: 'USD ($)', value: 'USD' }
                                     ]}
                                     value={tempCurrency}
                                     onChange={setTempCurrency}

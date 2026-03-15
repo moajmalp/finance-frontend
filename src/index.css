@@ -3,16 +3,16 @@
 
 :root {
   /* Clean & Airy Light Mode (Professional Banking Aesthetic) */
-  --background: #f8fafc;
-  --foreground: #000000;
+  --background: #f1f5f9;
+  --foreground: #0f172a;
   --primary: #4338ca;
-  --primary-glow: rgba(67, 56, 202, 0.08);
+  --primary-glow: rgba(67, 56, 202, 0.1);
   --primary-foreground: #ffffff;
 
-  --card-bg: rgba(255, 255, 255, 0.8);
-  --card-border: rgba(67, 56, 202, 0.1);
-  --card-foreground: #000000;
-  --card-muted: #f1f5f9;
+  --card-bg: #ffffff;
+  --card-border: rgba(67, 56, 202, 0.15);
+  --card-foreground: #0f172a;
+  --card-muted: #f8fafc;
 
 
   --border: #e2e8f0;
@@ -21,7 +21,7 @@
   --ring: #4338ca;
 
   --muted: #f1f5f9;
-  --muted-foreground: #64748b;
+  --muted-foreground: #475569;
 
   --accent: #4338ca;
   --accent-foreground: #ffffff;
@@ -160,7 +160,7 @@
   }
 
   .text-gradient {
-    @apply font-black text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-br dark:from-slate-300 dark:via-white dark:to-slate-400;
+    @apply font-black text-slate-900 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-br dark:from-slate-300 dark:via-white dark:to-slate-400;
   }
 
 

@@ -15,7 +15,7 @@ const RootLayout = ({ children, activeTab, setActiveTab, onOpenNotifications, un
 
     return (
         <div className={cn(
-            "min-h-screen pb-24 lg:pb-0 transition-all duration-500 transition-colors duration-500",
+            "min-h-screen transition-all duration-500 transition-colors duration-500",
             isSidebarCollapsed ? "lg:pl-24" : "lg:pl-64"
         )}>
             <Sidebar
@@ -33,7 +33,7 @@ const RootLayout = ({ children, activeTab, setActiveTab, onOpenNotifications, un
                 isSidebarCollapsed ? "left-24" : "left-64"
             )}>
                 <div className="flex items-center gap-4">
-                    <h1 className="text-xl font-black text-gradient tracking-tight capitalize">{activeTab.replace('_', ' ')}</h1>
+                    <h1 className="text-xl font-black text-slate-900 dark:text-transparent dark:bg-clip-text dark:bg-linear-to-br dark:from-slate-300 dark:via-white dark:to-slate-400 tracking-tight capitalize">{activeTab.replace('_', ' ')}</h1>
                 </div>
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2 border-r border-border/50 pr-4 mr-2">
@@ -100,7 +100,7 @@ const RootLayout = ({ children, activeTab, setActiveTab, onOpenNotifications, un
                             <Menu size={20} />
                         </button>
                         <div className="h-2 w-2 rounded-full bg-primary animate-pulse shadow-glow" />
-                        <h1 className="text-sm font-black text-gradient uppercase tracking-[0.2em]">{activeTab.replace('_', ' ')}</h1>
+                        <h1 className="text-sm font-black text-slate-900 dark:text-transparent dark:bg-clip-text dark:bg-linear-to-br dark:from-slate-300 dark:via-white dark:to-slate-400 uppercase tracking-[0.2em]">{activeTab.replace('_', ' ')}</h1>
                     </div>
                     <div className="flex items-center gap-2">
                         <button
@@ -138,16 +138,12 @@ const RootLayout = ({ children, activeTab, setActiveTab, onOpenNotifications, un
                 </header>
 
 
-                <div className="pt-20 pb-28 px-4 lg:p-12 lg:pt-32 max-w-6xl mx-auto">
+                <div className="pt-20 pb-10 px-4 lg:p-12 lg:pt-32 max-w-6xl mx-auto">
                     {children}
                 </div>
             </main>
 
-            <BottomNav
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
-                onOpenMenu={() => setIsMobileMenuOpen(true)}
-            />
+            {/* BottomNav removed as per user request */}
 
             <MobileMenu
                 isOpen={isMobileMenuOpen}
