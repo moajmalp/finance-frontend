@@ -4,6 +4,7 @@ import { cn } from '../lib/utils'
 import { useTransactions } from '../context/TransactionContext'
 
 import ConfirmationModal from '../components/ui/ConfirmationModal'
+import haptics from '../lib/haptics'
 
 const Sidebar = ({ activeTab, setActiveTab, onOpenNotifications, unreadNotifications, isCollapsed, setIsCollapsed }) => {
     const { user, logout } = useTransactions()
@@ -38,7 +39,7 @@ const Sidebar = ({ activeTab, setActiveTab, onOpenNotifications, unreadNotificat
             )}>
                 <div
                     className="flex items-center gap-3 cursor-pointer group/logo"
-                    onClick={() => setIsCollapsed(!isCollapsed)}
+                    onClick={() => { haptics.light(); setIsCollapsed(!isCollapsed); }}
                 >
                     <img src="/flux_icon.png" alt="FLUX Logo" className="h-11 w-11 shrink-0 shadow-[0_0_20px_rgba(168,85,247,0.4)] group-hover/logo:scale-110 transition-transform duration-300 rounded-2xl" />
                     {!isCollapsed && (
@@ -50,7 +51,7 @@ const Sidebar = ({ activeTab, setActiveTab, onOpenNotifications, unreadNotificat
                 </div>
                 {!isCollapsed && (
                     <button
-                        onClick={() => setIsCollapsed(true)}
+                        onClick={() => { haptics.light(); setIsCollapsed(true); }}
                         className="p-1.5 rounded-lg border border-border/50 text-muted-foreground hover:bg-white/5 hover:text-white transition-all hidden lg:block"
                     >
                         <ChevronRight size={16} className="rotate-180" />
@@ -68,7 +69,7 @@ const Sidebar = ({ activeTab, setActiveTab, onOpenNotifications, unreadNotificat
                 {menuItems.map((item) => (
                     <button
                         key={item.id}
-                        onClick={() => setActiveTab(item.id)}
+                        onClick={() => { haptics.light(); setActiveTab(item.id); }}
                         className={cn(
                             "group flex items-center gap-3 rounded-2xl transition-all duration-300",
                             isCollapsed

@@ -1,6 +1,7 @@
 import { Home, List, Wallet, PlusCircle, User, Menu } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { motion } from 'framer-motion'
+import haptics from '../lib/haptics'
 
 const BottomNav = ({ activeTab, setActiveTab, onOpenMenu }) => {
     const items = [
@@ -16,7 +17,11 @@ const BottomNav = ({ activeTab, setActiveTab, onOpenMenu }) => {
             {items.map((item) => (
                 <button
                     key={item.id}
-                    onClick={() => item.action ? item.action() : setActiveTab(item.id)}
+                    onClick={() => {
+                        haptics.light();
+                        if (item.action) item.action();
+                        else setActiveTab(item.id);
+                    }}
                     className={cn(
                         'flex flex-col items-center justify-center gap-1 transition-all relative py-2 flex-1 outline-none',
                         activeTab === item.id ? 'text-primary' : 'text-slate-400'
@@ -35,7 +40,7 @@ const BottomNav = ({ activeTab, setActiveTab, onOpenMenu }) => {
                                     activeTab === item.id ? 'scale-110 opacity-100' : 'opacity-40'
                                 )}
                             />
-                            <span className="text-[10px] font-black uppercase tracking-[0.1em] mt-1">{item.label}</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest mt-1">{item.label}</span>
                         </>
                     )}
 
