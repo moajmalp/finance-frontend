@@ -11,7 +11,8 @@ const STORAGE_KEYS = {
     PIN_ENABLED: 'finance_security_pin_enabled',
     PIN_HASH: 'finance_security_pin_hash',
     INTRUDER_ENABLED: 'finance_security_intruder_enabled',
-    INTRUDER_LOGS: 'mock_intruder_logs'
+    INTRUDER_LOGS: 'mock_intruder_logs',
+    CREDENTIAL_ID: 'finance_security_credential_id'
 };
 
 const INACTIVITY_TIMEOUT = 15 * 60 * 1000; // 15 minutes
@@ -29,6 +30,9 @@ const hashPIN = async (pin) => {
 export const SecurityProvider = ({ children }) => {
     const [isBiometricEnabled, setIsBiometricEnabled] = useState(() => 
         JSON.parse(localStorage.getItem(STORAGE_KEYS.BIOMETRIC) || 'false')
+    );
+    const [biometricCredentialId, setBiometricCredentialId] = useState(() =>
+        localStorage.getItem(STORAGE_KEYS.CREDENTIAL_ID)
     );
     const [isPatternLockEnabled, setIsPatternLockEnabled] = useState(() => 
         JSON.parse(localStorage.getItem(STORAGE_KEYS.PIN_ENABLED) || 'false')
@@ -169,9 +173,77 @@ export const SecurityProvider = ({ children }) => {
         toast.success('All security logs cleared');
     };
 
+    const isWebAuthnSupported = () => {
+        return !!(window.PublicKeyCredential && navigator.credentials && navigator.credentials.create);
+    };
+
+    const registerBiometrics = async () => {
+        if (!isWebAuthnSupported()) {
+            return { success: false, error: 'Biometrics not supported on this device.' };
+        }
+        try {
+            const challenge = new Uint8Array(32);
+            crypto.getRandomValues(challenge);
+            const credential = await navigator.credentials.create({
+                publicKey: {
+                    challenge,
+                    rp: { name: 'AJ Finance', id: window.location.hostname },
+                    user: {
+                        id: new Uint8Array(16),
+                        name: 'finance-user',
+                        displayName: 'Finance User'
+                    },
+                    pubKeyCredParams: [{ alg: -7, type: 'public-key' }],
+                    authenticatorSelection: {
+                        authenticatorAttachment: 'platform',
+                        userVerification: 'required'
+                    },
+                    timeout: 60000
+                }
+            });
+            // Save a mock credential ID (base64 of the raw ID)
+            const credId = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
+            localStorage.setItem(STORAGE_KEYS.CREDENTIAL_ID, credId);
+            localStorage.setItem(STORAGE_KEYS.BIOMETRIC, 'true');
+            setBiometricCredentialId(credId);
+            setIsBiometricEnabled(true);
+            haptics.success();
+            return { success: true };
+        } catch (err) {
+            if (err.name === 'NotAllowedError') {
+                return { success: false, error: 'Authentication was cancelled or timed out.' };
+            }
+            return { success: false, error: err.message || 'Biometric registration failed.' };
+        }
+    };
+
+    const authenticateBiometrically = async () => {
+        if (!isWebAuthnSupported() || !biometricCredentialId) {
+            return false;
+        }
+        try {
+            const challenge = new Uint8Array(32);
+            crypto.getRandomValues(challenge);
+            await navigator.credentials.get({
+                publicKey: {
+                    challenge,
+                    rpId: window.location.hostname,
+                    userVerification: 'required',
+                    timeout: 60000
+                }
+            });
+            haptics.success();
+            return true;
+        } catch (err) {
+            return false;
+        }
+    };
+
     const deregisterBiometrics = () => {
         setIsBiometricEnabled(false);
+        setBiometricCredentialId(null);
         localStorage.removeItem(STORAGE_KEYS.BIOMETRIC);
+        localStorage.removeItem(STORAGE_KEYS.CREDENTIAL_ID);
         toast.success('Biometric credentials deregistered');
     };
 
@@ -179,6 +251,7 @@ export const SecurityProvider = ({ children }) => {
         <SecurityContext.Provider value={{
             isBiometricEnabled,
             setIsBiometricEnabled,
+            biometricCredentialId,
             isPatternLockEnabled,
             setIsPatternLockEnabled,
             isIntruderSnapshotEnabled,
@@ -193,6 +266,9 @@ export const SecurityProvider = ({ children }) => {
             deleteLog,
             clearAllLogs,
             intruderLogs,
+            isWebAuthnSupported,
+            registerBiometrics,
+            authenticateBiometrically,
             deregisterBiometrics
         }}>
             {children}
