@@ -38,6 +38,15 @@ const haptics = {
         if (typeof window !== 'undefined' && window.navigator && window.navigator.vibrate) {
             window.navigator.vibrate([50, 30, 50]);
         }
+    },
+
+    /**
+     * Heavy feedback for security alerts (70ms)
+     */
+    heavy: () => {
+        if (typeof window !== 'undefined' && window.navigator && window.navigator.vibrate) {
+            window.navigator.vibrate(70);
+        }
     }
 };
 

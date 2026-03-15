@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import toast from 'react-hot-toast';
+import haptics from '../lib/haptics';
 
 const SecurityContext = createContext();
 
@@ -12,6 +13,9 @@ const STORAGE_KEYS = {
     INTRUDER_ENABLED: 'finance_security_intruder_enabled',
     INTRUDER_LOGS: 'mock_intruder_logs'
 };
+
+const INACTIVITY_TIMEOUT = 15 * 60 * 1000; // 15 minutes
+const WARNING_BEFORE = 60 * 1000; // 1 minute warning
 
 // Utility to hash PIN using Web Crypto API
 const hashPIN = async (pin) => {
@@ -35,10 +39,77 @@ export const SecurityProvider = ({ children }) => {
     const [savedPINHash, setSavedPINHash] = useState(() => 
         localStorage.getItem(STORAGE_KEYS.PIN_HASH)
     );
+    
+    // LOCK ON LAUNCH: Always start locked if a PIN exists
     const [isAppLocked, setIsAppLocked] = useState(!!localStorage.getItem(STORAGE_KEYS.PIN_HASH));
+    
     const [intruderLogs, setIntruderLogs] = useState(() => 
         JSON.parse(localStorage.getItem(STORAGE_KEYS.INTRUDER_LOGS) || '[]')
     );
+
+    const timerRef = useRef(null);
+    const warningRef = useRef(null);
+    const warningToastId = useRef(null);
+
+    const resetTimer = useCallback(() => {
+        if (!savedPINHash || isAppLocked) return;
+
+        if (timerRef.current) clearTimeout(timerRef.current);
+        if (warningRef.current) clearTimeout(warningRef.current);
+        if (warningToastId.current) {
+            toast.dismiss(warningToastId.current);
+            warningToastId.current = null;
+        }
+
+        // Warning timer
+        warningRef.current = setTimeout(() => {
+            warningToastId.current = toast.custom((t) => (
+                <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-slate-900 shadow-2xl rounded-2xl pointer-events-auto flex ring-1 ring-white/10 p-4 border border-primary/20`}>
+                    <div className="flex-1 w-0 p-1">
+                        <div className="flex items-start">
+                            <div className="ml-3 flex-1">
+                                <p className="text-sm font-black text-white uppercase tracking-tight">Security Protocol</p>
+                                <p className="mt-1 text-xs font-medium text-slate-400">Session expiring in 60 seconds due to inactivity.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex border-l border-white/5">
+                        <button
+                            onClick={() => {
+                                haptics.light();
+                                resetTimer();
+                            }}
+                            className="w-full border border-transparent rounded-none rounded-r-2xl p-4 flex items-center justify-center text-[10px] font-black uppercase tracking-widest text-primary hover:text-primary/80 transition-colors"
+                        >
+                            Stay Logged In
+                        </button>
+                    </div>
+                </div>
+            ), { duration: Infinity, position: 'top-center' });
+        }, INACTIVITY_TIMEOUT - WARNING_BEFORE);
+
+        // Auto-lock timer
+        timerRef.current = setTimeout(() => {
+            haptics.heavy(); // Short vibration/feedback for security lock
+            setIsAppLocked(true);
+            toast.error('Session locked due to inactivity', { icon: '🛡️' });
+        }, INACTIVITY_TIMEOUT);
+    }, [savedPINHash, isAppLocked]);
+
+    useEffect(() => {
+        const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+        
+        if (savedPINHash && !isAppLocked) {
+            events.forEach(event => window.addEventListener(event, resetTimer));
+            resetTimer(); // Start timer immediately
+        }
+
+        return () => {
+            events.forEach(event => window.removeEventListener(event, resetTimer));
+            if (timerRef.current) clearTimeout(timerRef.current);
+            if (warningRef.current) clearTimeout(warningRef.current);
+        };
+    }, [savedPINHash, isAppLocked, resetTimer]);
 
     useEffect(() => {
         localStorage.setItem(STORAGE_KEYS.BIOMETRIC, JSON.stringify(isBiometricEnabled));
