@@ -1,6 +1,8 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import toast from 'react-hot-toast';
 import haptics from '../lib/haptics';
+import api from '../services/api';
+import { useAuth } from './AuthContext';
 
 const SecurityContext = createContext();
 
@@ -28,28 +30,18 @@ const hashPIN = async (pin) => {
 };
 
 export const SecurityProvider = ({ children }) => {
-    const [isBiometricEnabled, setIsBiometricEnabled] = useState(() => 
-        JSON.parse(localStorage.getItem(STORAGE_KEYS.BIOMETRIC) || 'false')
-    );
-    const [biometricCredentialId, setBiometricCredentialId] = useState(() =>
-        localStorage.getItem(STORAGE_KEYS.CREDENTIAL_ID)
-    );
-    const [isPatternLockEnabled, setIsPatternLockEnabled] = useState(() => 
-        JSON.parse(localStorage.getItem(STORAGE_KEYS.PIN_ENABLED) || 'false')
-    );
-    const [isIntruderSnapshotEnabled, setIsIntruderSnapshotEnabled] = useState(() => 
-        JSON.parse(localStorage.getItem(STORAGE_KEYS.INTRUDER_ENABLED) || 'false')
-    );
-    const [savedPINHash, setSavedPINHash] = useState(() => 
-        localStorage.getItem(STORAGE_KEYS.PIN_HASH)
-    );
+    const { isAuthenticated } = useAuth();
+    const [isBiometricEnabled, setIsBiometricEnabled] = useState(false);
+    const [biometricCredentialId, setBiometricCredentialId] = useState(null);
+    const [isPatternLockEnabled, setIsPatternLockEnabled] = useState(false);
+    const [isIntruderSnapshotEnabled, setIsIntruderSnapshotEnabled] = useState(false);
+    const [savedPINHash, setSavedPINHash] = useState(null);
+    const [isSyncing, setIsSyncing] = useState(true);
     
     // LOCK ON LAUNCH: Always start locked if a PIN exists
-    const [isAppLocked, setIsAppLocked] = useState(!!localStorage.getItem(STORAGE_KEYS.PIN_HASH));
+    const [isAppLocked, setIsAppLocked] = useState(true);
     
-    const [intruderLogs, setIntruderLogs] = useState(() => 
-        JSON.parse(localStorage.getItem(STORAGE_KEYS.INTRUDER_LOGS) || '[]')
-    );
+    const [intruderLogs, setIntruderLogs] = useState([]);
 
     const timerRef = useRef(null);
     const warningRef = useRef(null);
@@ -115,28 +107,65 @@ export const SecurityProvider = ({ children }) => {
         };
     }, [savedPINHash, isAppLocked, resetTimer]);
 
+    // FETCH SECURITY CONFIG FROM CLOUD
     useEffect(() => {
-        localStorage.setItem(STORAGE_KEYS.BIOMETRIC, JSON.stringify(isBiometricEnabled));
-    }, [isBiometricEnabled]);
+        if (!isAuthenticated) {
+            setIsSyncing(false);
+            return;
+        }
 
-    useEffect(() => {
-        localStorage.setItem(STORAGE_KEYS.PIN_ENABLED, JSON.stringify(isPatternLockEnabled));
-    }, [isPatternLockEnabled]);
+        const syncSecurity = async () => {
+            setIsSyncing(true);
+            try {
+                const [config, logs] = await Promise.all([
+                    api.fetchSecurityConfig(),
+                    api.fetchSecurityLogs()
+                ]);
 
-    useEffect(() => {
-        localStorage.setItem(STORAGE_KEYS.INTRUDER_ENABLED, JSON.stringify(isIntruderSnapshotEnabled));
-    }, [isIntruderSnapshotEnabled]);
+                if (config) {
+                    setSavedPINHash(config.hashed_pin);
+                    setIsPatternLockEnabled(!!config.hashed_pin);
+                    setIsBiometricEnabled(config.is_biometric_enabled);
+                    setBiometricCredentialId(config.biometric_credential_id);
+                    // Intruder snapshot is a UI preference for now, but we could sync it if backend supports
+                    setIsIntruderSnapshotEnabled(config.is_intruder_snapshot_enabled);
+                    
+                    // Update app lock state based on whether a PIN exists
+                    setIsAppLocked(!!config.hashed_pin);
+                }
+                
+                if (logs) {
+                    setIntruderLogs(logs.map(log => ({
+                        id: log.id,
+                        timestamp: log.timestamp,
+                        snapshot: log.snapshot_data
+                    })));
+                }
+            } catch (error) {
+                console.error('Failed to sync security config:', error);
+                toast.error('Security synchronization failed');
+            } finally {
+                setIsSyncing(false);
+            }
+        };
 
-    useEffect(() => {
-        localStorage.setItem(STORAGE_KEYS.INTRUDER_LOGS, JSON.stringify(intruderLogs));
-    }, [intruderLogs]);
+        syncSecurity();
+    }, [isAuthenticated]);
 
     const setPIN = async (pin) => {
-        const hash = await hashPIN(pin);
-        localStorage.setItem(STORAGE_KEYS.PIN_HASH, hash);
-        setSavedPINHash(hash);
-        setIsAppLocked(false);
-        toast.success('Security PIN saved successfully');
+        setIsSyncing(true);
+        try {
+            const hash = await hashPIN(pin);
+            await api.updateSecurityConfig({ pin_hash: hash });
+            setSavedPINHash(hash);
+            setIsPatternLockEnabled(true);
+            setIsAppLocked(false);
+            toast.success('Security PIN saved successfully');
+        } catch (error) {
+            toast.error('Failed to save PIN to cloud');
+        } finally {
+            setIsSyncing(false);
+        }
     };
 
     const verifyPIN = async (pin) => {
@@ -144,33 +173,60 @@ export const SecurityProvider = ({ children }) => {
         return inputHash === savedPINHash;
     };
 
-    const clearPIN = () => {
-        localStorage.removeItem(STORAGE_KEYS.PIN_HASH);
-        setSavedPINHash(null);
-        setIsAppLocked(false);
+    const clearPIN = async () => {
+        setIsSyncing(true);
+        try {
+            await api.updateSecurityConfig({ pin_hash: null });
+            setSavedPINHash(null);
+            setIsPatternLockEnabled(false);
+            setIsAppLocked(false);
+            toast.success('Security PIN removed');
+        } catch (error) {
+            toast.error('Failed to remove PIN from cloud');
+        } finally {
+            setIsSyncing(false);
+        }
     };
 
-    const logIntruder = (snapshot) => {
-        const newLog = {
-            id: Date.now(),
-            timestamp: new Date().toISOString(),
-            snapshot // Base64 image
-        };
-        const updatedLogs = [newLog, ...intruderLogs];
-        setIntruderLogs(updatedLogs);
-        console.warn('INTRUDER DETECTED: Snapshot captured.');
+    const logIntruder = async (snapshot) => {
+        try {
+            const newLog = await api.logIntruder(snapshot);
+            setIntruderLogs(prev => [{
+                id: newLog.id,
+                timestamp: newLog.timestamp,
+                snapshot: newLog.snapshot_data
+            }, ...prev]);
+            console.warn('INTRUDER DETECTED: Snapshot uploaded.');
+        } catch (error) {
+            console.error('Failed to upload intruder log');
+        }
     };
 
-    const deleteLog = (id) => {
-        const updatedLogs = intruderLogs.filter(log => log.id !== id);
-        setIntruderLogs(updatedLogs);
-        toast.success('Log entry deleted');
+    const deleteLog = async (id) => {
+        setIsSyncing(true);
+        try {
+            await api.deleteSecurityLog(id);
+            const updatedLogs = intruderLogs.filter(log => log.id !== id);
+            setIntruderLogs(updatedLogs);
+            toast.success('Log entry removed from cloud');
+        } catch (error) {
+            toast.error('Failed to delete log');
+        } finally {
+            setIsSyncing(false);
+        }
     };
 
-    const clearAllLogs = () => {
-        setIntruderLogs([]);
-        localStorage.setItem(STORAGE_KEYS.INTRUDER_LOGS, '[]');
-        toast.success('All security logs cleared');
+    const clearAllLogs = async () => {
+        setIsSyncing(true);
+        try {
+            await api.clearAllSecurityLogs();
+            setIntruderLogs([]);
+            toast.success('All security logs cleared from cloud');
+        } catch (error) {
+            toast.error('Failed to clear logs');
+        } finally {
+            setIsSyncing(false);
+        }
     };
 
     const isWebAuthnSupported = () => {
@@ -181,6 +237,7 @@ export const SecurityProvider = ({ children }) => {
         if (!isWebAuthnSupported()) {
             return { success: false, error: 'Biometrics not supported on this device.' };
         }
+        setIsSyncing(true);
         try {
             const challenge = new Uint8Array(32);
             crypto.getRandomValues(challenge);
@@ -203,8 +260,9 @@ export const SecurityProvider = ({ children }) => {
             });
             // Save a mock credential ID (base64 of the raw ID)
             const credId = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
-            localStorage.setItem(STORAGE_KEYS.CREDENTIAL_ID, credId);
-            localStorage.setItem(STORAGE_KEYS.BIOMETRIC, 'true');
+            
+            await api.registerBiometric(credId);
+            
             setBiometricCredentialId(credId);
             setIsBiometricEnabled(true);
             haptics.success();
@@ -214,6 +272,8 @@ export const SecurityProvider = ({ children }) => {
                 return { success: false, error: 'Authentication was cancelled or timed out.' };
             }
             return { success: false, error: err.message || 'Biometric registration failed.' };
+        } finally {
+            setIsSyncing(false);
         }
     };
 
@@ -239,12 +299,34 @@ export const SecurityProvider = ({ children }) => {
         }
     };
 
-    const deregisterBiometrics = () => {
-        setIsBiometricEnabled(false);
-        setBiometricCredentialId(null);
-        localStorage.removeItem(STORAGE_KEYS.BIOMETRIC);
-        localStorage.removeItem(STORAGE_KEYS.CREDENTIAL_ID);
-        toast.success('Biometric credentials deregistered');
+    const deregisterBiometrics = async () => {
+        setIsSyncing(true);
+        try {
+            await api.updateSecurityConfig({ 
+                biometric_credential_id: null,
+                is_biometric_enabled: false
+            });
+            setIsBiometricEnabled(false);
+            setBiometricCredentialId(null);
+            toast.success('Biometric credentials deregistered');
+        } catch (error) {
+            toast.error('Failed to deregister biometrics');
+        } finally {
+            setIsSyncing(false);
+        }
+    };
+
+    const toggleIntruderSnapshot = async (enabled) => {
+        setIsSyncing(true);
+        try {
+            await api.updateSecurityConfig({ is_intruder_snapshot_enabled: enabled });
+            setIsIntruderSnapshotEnabled(enabled);
+            toast.success(enabled ? 'Intruder snapshots enabled' : 'Intruder snapshots disabled');
+        } catch (error) {
+            toast.error('Failed to update security preference');
+        } finally {
+            setIsSyncing(false);
+        }
     };
 
     return (
@@ -255,10 +337,11 @@ export const SecurityProvider = ({ children }) => {
             isPatternLockEnabled,
             setIsPatternLockEnabled,
             isIntruderSnapshotEnabled,
-            setIsIntruderSnapshotEnabled,
+            toggleIntruderSnapshot,
             isAppLocked,
             setIsAppLocked,
             savedPINHash,
+            isSyncing,
             setPIN,
             verifyPIN,
             clearPIN,
