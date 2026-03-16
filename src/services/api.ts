@@ -126,7 +126,13 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response?.status >= 500) {
+        console.log("apiClient: Response error interceptor caught:", error.response?.status);
+        if (error.response?.status === 401) {
+            console.warn("apiClient: 401 Unauthorized detected. Clearing token and dispatching 'unauthorized' event.");
+            localStorage.removeItem('token');
+            // Dispatch custom event for AuthContext to pick up
+            window.dispatchEvent(new Event('unauthorized'));
+        } else if (error.response?.status >= 500) {
             toast.error('Something went wrong on our end. Please try again later.');
         }
         return Promise.reject(error);
