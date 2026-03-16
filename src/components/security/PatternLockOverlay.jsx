@@ -20,33 +20,26 @@ const PINLockOverlay = () => {
         biometricCredentialId,
         authenticateBiometrically,
         isSyncing,
+        isSettingPIN,
+        setIsSettingPIN
     } = useSecurity();
 
     const [pin, setPin] = useState('');
     const [status, setStatus] = useState('DEFAULT'); // DEFAULT, SUCCESS, ERROR
     const [attempts, setAttempts] = useState(0);
-    const [isSettingMode, setIsSettingMode] = useState(false);
     const [isResetMode, setIsResetMode] = useState(false);
     const [securityAnswer, setSecurityAnswer] = useState('');
     const [firstPin, setFirstPin] = useState(null);
     const [cameraError, setCameraError] = useState(null);
     const [biometricStatus, setBiometricStatus] = useState('idle'); // idle, scanning, failed
 
-    // Initialize setting mode correctly after sync
-    useEffect(() => {
-        if (!isSyncing && !savedPINHash) {
-            setIsSettingMode(true);
-        } else if (!isSyncing && savedPINHash) {
-            setIsSettingMode(false);
-        }
-    }, [isSyncing, savedPINHash]);
 
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
 
     // Auto-trigger biometric auth when lock screen appears
     useEffect(() => {
-        if (isAppLocked && isBiometricEnabled && biometricCredentialId && !isSettingMode) {
+        if (isAppLocked && isBiometricEnabled && biometricCredentialId && !isSettingPIN) {
             triggerBiometricAuth();
         }
     }, [isAppLocked]);
@@ -57,6 +50,7 @@ const PINLockOverlay = () => {
         if (success) {
             setBiometricStatus('idle');
             setStatus('SUCCESS');
+            setAttempts(0); // Reset attempts on success
             setTimeout(() => setIsAppLocked(false), 400);
         } else {
             setBiometricStatus('failed');
@@ -106,13 +100,13 @@ const PINLockOverlay = () => {
     };
 
     const handleSubmit = async () => {
-        if (pin.length < 4) {
+        if (pin.length !== 6) {
             haptics.error();
-            toast.error('PIN must be at least 4 digits');
+            toast.error('PIN must be exactly 6 digits');
             return;
         }
 
-        if (isSettingMode) {
+        if (isSettingPIN) {
             if (!firstPin) {
                 haptics.medium();
                 setFirstPin(pin);
@@ -120,11 +114,24 @@ const PINLockOverlay = () => {
                 toast('Confirm your PIN');
             } else {
                 if (firstPin === pin) {
-                    haptics.success();
-                    await setPIN(pin);
-                    setIsSettingMode(false);
-                    setStatus('SUCCESS');
-                    setTimeout(() => setIsAppLocked(false), 500);
+                    haptics.medium(); // Medium feedback for processing
+                    console.log("PatternLockOverlay: PINs match, calling setPIN...");
+                    const success = await setPIN(pin);
+                    
+                    if (success) {
+                        console.log("PatternLockOverlay: PIN saved successfully.");
+                        haptics.success();
+                        setIsSettingPIN(false);
+                        setStatus('SUCCESS');
+                        setAttempts(0); // Reset attempts
+                        setTimeout(() => setIsAppLocked(false), 500);
+                    } else {
+                        console.error("PatternLockOverlay: setPIN failed.");
+                        haptics.error();
+                        setStatus('ERROR');
+                        // Stay in setting mode so they can try again or see the redirect
+                        setTimeout(() => setStatus('DEFAULT'), 1000);
+                    }
                 } else {
                     haptics.error();
                     setStatus('ERROR');
@@ -139,6 +146,7 @@ const PINLockOverlay = () => {
             if (isValid) {
                 haptics.success();
                 setStatus('SUCCESS');
+                setAttempts(0); // Reset attempts
                 setTimeout(() => setIsAppLocked(false), 500);
             } else {
                 haptics.error();
@@ -147,11 +155,15 @@ const PINLockOverlay = () => {
                 setAttempts(newAttempts);
                 setPin('');
                 
-                if (isIntruderSnapshotEnabled && newAttempts >= 3) {
+                // Trigger snapshot on EXACTLY the 3rd failed attempt
+                if (isIntruderSnapshotEnabled && newAttempts === 3) {
+                    console.warn("PatternLockOverlay: 3 failed attempts. Capturing intruder snapshot...");
                     captureSnapshot();
+                    toast.error('Security protocol initiated: Intruder snapshot captured.', { icon: '📸' });
+                } else {
+                    toast.error(`Incorrect PIN (${newAttempts}/3)`);
                 }
 
-                toast.error('Incorrect PIN');
                 setTimeout(() => setStatus('DEFAULT'), 1000);
             }
         }
@@ -163,7 +175,7 @@ const PINLockOverlay = () => {
             clearPIN();
             toast.success('PIN Reset Successful. Set a new one.');
             setIsResetMode(false);
-            setIsSettingMode(true);
+            setIsSettingPIN(true);
             setSecurityAnswer('');
         } else {
             haptics.error();
@@ -172,7 +184,7 @@ const PINLockOverlay = () => {
     };
 
     if (!isAppLocked && savedPINHash) return null;
-    if (!isAppLocked && !isSyncing && !savedPINHash && !isSettingMode) return null;
+    if (!isAppLocked && !isSyncing && !savedPINHash && !isSettingPIN) return null;
 
     const keypad = [1, 2, 3, 4, 5, 6, 7, 8, 9, 'DELETE', 0, 'SUBMIT'];
 
@@ -212,10 +224,10 @@ const PINLockOverlay = () => {
                     </div>
                     <div>
                         <h2 className="text-xl font-black tracking-tight uppercase">
-                            {isResetMode ? 'Identity Verification' : isSettingMode ? (firstPin ? 'Confirm Security PIN' : 'Set Security PIN') : 'Access Restricted'}
+                            {isResetMode ? 'Identity Verification' : isSettingPIN ? (firstPin ? 'Confirm Security PIN' : 'Set Security PIN') : 'Access Restricted'}
                         </h2>
                         <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mt-2 opacity-70">
-                            {isResetMode ? 'Answer Security Question' : isSettingMode ? 'Secure your vault' : 'Verification Required'}
+                            {isResetMode ? 'Answer Security Question' : isSettingPIN ? 'Secure your vault' : 'Verification Required'}
                         </p>
                     </div>
                 </div>
@@ -252,7 +264,7 @@ const PINLockOverlay = () => {
                     <>
                         {/* PIN Display Dots */}
                         <div className="flex gap-4 my-4">
-                            {[...Array(isSettingMode && firstPin ? firstPin.length : Math.max(pin.length, 4))].map((_, i) => (
+                            {[...Array(6)].map((_, i) => (
                                 <motion.div
                                     key={i}
                                     initial={false}
@@ -304,7 +316,7 @@ const PINLockOverlay = () => {
                 )}
 
                 <div className="mt-4 space-y-4">
-                    {!isResetMode && !isSettingMode && (
+                    {!isResetMode && !isSettingPIN && (
                         <button 
                             onClick={() => { haptics.light(); setIsResetMode(true); }}
                             className="text-[10px] font-black text-primary/60 uppercase tracking-widest hover:text-primary transition-all"
@@ -314,13 +326,13 @@ const PINLockOverlay = () => {
                     )}
                     
                     <p className="text-[10px] font-medium text-slate-500 uppercase tracking-widest">
-                        {isResetMode ? "Temporary recovery using security protocol." : isSettingMode 
-                            ? "Use 4-6 digits for maximum session integrity."
-                            : "Enter credentials to initialize sync."}
+                        {isResetMode ? "Temporary recovery using security protocol." : isSettingPIN 
+                            ? "Use exactly 6 digits for maximum session integrity."
+                            : "Enter 6-digit PIN to initialize sync."}
                     </p>
 
                     {/* Biometric section */}
-                    {isBiometricEnabled && biometricCredentialId && !isSettingMode && !isResetMode && (
+                    {isBiometricEnabled && biometricCredentialId && !isSettingPIN && !isResetMode && (
                         <div className="flex flex-col items-center gap-3 pt-2 border-t border-white/5">
                             {biometricStatus === 'scanning' ? (
                                 <motion.div

@@ -31,7 +31,7 @@ const SettingsPage = () => {
         isPatternLockEnabled, setIsPatternLockEnabled, 
         isIntruderSnapshotEnabled, toggleIntruderSnapshot,
         setPIN, verifyPIN, clearPIN, deregisterBiometrics, savedPINHash,
-        biometricCredentialId
+        biometricCredentialId, triggerPINSetup, triggerPINVerify, togglePINLock
     } = useSecurity()
 
     const [showLogModal, setShowLogModal] = useState(false)
@@ -500,7 +500,18 @@ const SettingsPage = () => {
                                         </div>
                                     </div>
                                     <button
-                                        onClick={() => { haptics.light(); setIsPatternLockEnabled(!isPatternLockEnabled); }}
+                                        onClick={() => { 
+                                            haptics.light(); 
+                                            if (!isPatternLockEnabled) {
+                                                if (!savedPINHash) {
+                                                    triggerPINSetup();
+                                                } else {
+                                                    togglePINLock(true);
+                                                }
+                                            } else {
+                                                togglePINLock(false);
+                                            }
+                                        }}
                                         className={cn(
                                             "relative flex h-8 w-14 items-center rounded-full p-1 transition-colors focus:outline-none",
                                             isPatternLockEnabled ? "bg-primary" : "bg-muted"
@@ -621,7 +632,8 @@ const SettingsPage = () => {
                                                                     haptics.success();
                                                                     setIsVerifyingToChange(false);
                                                                     setCurrentPinCheck('');
-                                                                    clearPIN(); // This triggers the global overlay in "Setting" mode
+                                                                    clearPIN();
+                                                                    triggerPINSetup();
                                                                     toast.success('Identity Verified. Set new PIN.');
                                                                 } else {
                                                                     haptics.error();

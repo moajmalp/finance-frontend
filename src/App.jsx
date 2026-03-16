@@ -139,12 +139,12 @@ function AppContent() {
           {renderContent()}
         </motion.div>
       </AnimatePresence>
+      <PatternLockOverlay />
     </RootLayout>
   )
 }
 
 import { Toaster } from 'react-hot-toast'
-
 import { SecurityProvider } from './context/SecurityContext'
 import PatternLockOverlay from './components/security/PatternLockOverlay'
 
@@ -154,7 +154,6 @@ function App() {
       <SecurityProvider>
         <TransactionProvider>
           <AppContent />
-          <PatternLockOverlay />
           <Toaster position="top-right" reverseOrder={false} />
         </TransactionProvider>
       </SecurityProvider>

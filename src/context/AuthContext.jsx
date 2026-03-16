@@ -12,6 +12,14 @@ export const AuthProvider = ({ children }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('token'));
     const [loading, setLoading] = useState(true);
 
+    const logout = useCallback(() => {
+        localStorage.removeItem('token');
+        setToken(null);
+        setIsAuthenticated(false);
+        setUser(null);
+        toast.success('Logged out successfully');
+    }, []);
+
     const loadProfile = useCallback(async () => {
         try {
             const profileData = await fetchProfile();
@@ -25,7 +33,7 @@ export const AuthProvider = ({ children }) => {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [logout]);
 
     useEffect(() => {
         if (isAuthenticated) {
@@ -33,7 +41,19 @@ export const AuthProvider = ({ children }) => {
         } else {
             setLoading(false);
         }
-    }, [isAuthenticated, loadProfile]);
+
+        const handleUnauthorized = () => {
+            console.warn("AuthContext: 'unauthorized' event received. Calling logout()...");
+            logout();
+        };
+
+        console.log("AuthContext: Adding 'unauthorized' event listener to window.");
+        window.addEventListener('unauthorized', handleUnauthorized);
+        return () => {
+            console.log("AuthContext: Removing 'unauthorized' event listener from window.");
+            window.removeEventListener('unauthorized', handleUnauthorized);
+        };
+    }, [isAuthenticated, loadProfile, logout]);
 
     const login = async (username, password) => {
         console.log("AuthContext: Starting login attempt for:", username);
@@ -57,13 +77,6 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const logout = () => {
-        localStorage.removeItem('token');
-        setToken(null);
-        setIsAuthenticated(false);
-        setUser(null);
-        toast.success('Logged out successfully');
-    };
 
     const register = async (username, password) => {
         try {

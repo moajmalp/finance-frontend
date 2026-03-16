@@ -37,6 +37,7 @@ export const SecurityProvider = ({ children }) => {
     const [isIntruderSnapshotEnabled, setIsIntruderSnapshotEnabled] = useState(false);
     const [savedPINHash, setSavedPINHash] = useState(null);
     const [isSyncing, setIsSyncing] = useState(true);
+    const [isSettingPIN, setIsSettingPIN] = useState(false);
     
     // LOCK ON LAUNCH: Always start locked if a PIN exists
     const [isAppLocked, setIsAppLocked] = useState(true);
@@ -124,14 +125,13 @@ export const SecurityProvider = ({ children }) => {
 
                 if (config) {
                     setSavedPINHash(config.hashed_pin);
-                    setIsPatternLockEnabled(!!config.hashed_pin);
+                    setIsPatternLockEnabled(config.is_pin_enabled); // USE PERSISTED STATE
                     setIsBiometricEnabled(config.is_biometric_enabled);
                     setBiometricCredentialId(config.biometric_credential_id);
-                    // Intruder snapshot is a UI preference for now, but we could sync it if backend supports
                     setIsIntruderSnapshotEnabled(config.is_intruder_snapshot_enabled);
                     
-                    // Update app lock state based on whether a PIN exists
-                    setIsAppLocked(!!config.hashed_pin);
+                    // LOCK ON LAUNCH: Only lock if a PIN exists AND it's enabled
+                    setIsAppLocked(config.is_pin_enabled && !!config.hashed_pin);
                 }
                 
                 if (logs) {
@@ -142,8 +142,11 @@ export const SecurityProvider = ({ children }) => {
                     })));
                 }
             } catch (error) {
-                console.error('Failed to sync security config:', error);
-                toast.error('Security synchronization failed');
+                // If 401, ignore here because AuthContext will handle logout/redirect
+                if (error.response?.status !== 401) {
+                    console.error('Failed to sync security config:', error);
+                    toast.error('Security synchronization failed');
+                }
             } finally {
                 setIsSyncing(false);
             }
@@ -156,13 +159,18 @@ export const SecurityProvider = ({ children }) => {
         setIsSyncing(true);
         try {
             const hash = await hashPIN(pin);
-            await api.updateSecurityConfig({ pin_hash: hash });
+            await api.updateSecurityConfig({ pin_hash: hash, is_pin_enabled: true }); // PERSIST AS ENABLED
             setSavedPINHash(hash);
             setIsPatternLockEnabled(true);
             setIsAppLocked(false);
             toast.success('Security PIN saved successfully');
+            return true;
         } catch (error) {
-            toast.error('Failed to save PIN to cloud');
+            console.error("SecurityContext: setPIN failed:", error.response?.status, error);
+            if (error.response?.status !== 401) {
+                toast.error('Failed to save PIN to cloud');
+            }
+            return false;
         } finally {
             setIsSyncing(false);
         }
@@ -176,13 +184,17 @@ export const SecurityProvider = ({ children }) => {
     const clearPIN = async () => {
         setIsSyncing(true);
         try {
-            await api.updateSecurityConfig({ pin_hash: null });
+            await api.updateSecurityConfig({ pin_hash: null, is_pin_enabled: false }); // CLEAR AND DISABLE PERSISTENCE
             setSavedPINHash(null);
             setIsPatternLockEnabled(false);
             setIsAppLocked(false);
             toast.success('Security PIN removed');
+            return true;
         } catch (error) {
-            toast.error('Failed to remove PIN from cloud');
+            if (error.response?.status !== 401) {
+                toast.error('Failed to remove PIN from cloud');
+            }
+            return false;
         } finally {
             setIsSyncing(false);
         }
@@ -210,7 +222,9 @@ export const SecurityProvider = ({ children }) => {
             setIntruderLogs(updatedLogs);
             toast.success('Log entry removed from cloud');
         } catch (error) {
-            toast.error('Failed to delete log');
+            if (error.response?.status !== 401) {
+                toast.error('Failed to delete log');
+            }
         } finally {
             setIsSyncing(false);
         }
@@ -322,8 +336,39 @@ export const SecurityProvider = ({ children }) => {
             await api.updateSecurityConfig({ is_intruder_snapshot_enabled: enabled });
             setIsIntruderSnapshotEnabled(enabled);
             toast.success(enabled ? 'Intruder snapshots enabled' : 'Intruder snapshots disabled');
+            return true;
         } catch (error) {
-            toast.error('Failed to update security preference');
+            if (error.response?.status !== 401) {
+                toast.error('Failed to update security preference');
+            }
+            return false;
+        } finally {
+            setIsSyncing(false);
+        }
+    };
+
+    const triggerPINSetup = () => {
+        setIsSettingPIN(true);
+        setIsAppLocked(true);
+    };
+
+    const triggerPINVerify = () => {
+        setIsSettingPIN(false);
+        setIsAppLocked(true);
+    };
+
+    const togglePINLock = async (enabled) => {
+        setIsSyncing(true);
+        try {
+            await api.updateSecurityConfig({ is_pin_enabled: enabled });
+            setIsPatternLockEnabled(enabled);
+            toast.success(enabled ? 'PIN Lock enabled' : 'PIN Lock disabled');
+            return true;
+        } catch (error) {
+            if (error.response?.status !== 401) {
+                toast.error('Failed to update PIN preference');
+            }
+            return false;
         } finally {
             setIsSyncing(false);
         }
@@ -349,6 +394,11 @@ export const SecurityProvider = ({ children }) => {
             deleteLog,
             clearAllLogs,
             intruderLogs,
+            isSettingPIN,
+            setIsSettingPIN,
+            triggerPINSetup,
+            triggerPINVerify,
+            togglePINLock,
             isWebAuthnSupported,
             registerBiometrics,
             authenticateBiometrically,
