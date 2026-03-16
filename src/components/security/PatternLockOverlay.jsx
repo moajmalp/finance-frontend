@@ -19,17 +19,27 @@ const PINLockOverlay = () => {
         isBiometricEnabled,
         biometricCredentialId,
         authenticateBiometrically,
+        isSyncing,
     } = useSecurity();
 
     const [pin, setPin] = useState('');
     const [status, setStatus] = useState('DEFAULT'); // DEFAULT, SUCCESS, ERROR
     const [attempts, setAttempts] = useState(0);
-    const [isSettingMode, setIsSettingMode] = useState(!savedPINHash);
+    const [isSettingMode, setIsSettingMode] = useState(false);
     const [isResetMode, setIsResetMode] = useState(false);
     const [securityAnswer, setSecurityAnswer] = useState('');
     const [firstPin, setFirstPin] = useState(null);
     const [cameraError, setCameraError] = useState(null);
     const [biometricStatus, setBiometricStatus] = useState('idle'); // idle, scanning, failed
+
+    // Initialize setting mode correctly after sync
+    useEffect(() => {
+        if (!isSyncing && !savedPINHash) {
+            setIsSettingMode(true);
+        } else if (!isSyncing && savedPINHash) {
+            setIsSettingMode(false);
+        }
+    }, [isSyncing, savedPINHash]);
 
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
@@ -141,7 +151,7 @@ const PINLockOverlay = () => {
                     captureSnapshot();
                 }
 
-                toast.error(`Incorrect PIN. Attempt ${newAttempts}/3`);
+                toast.error('Incorrect PIN');
                 setTimeout(() => setStatus('DEFAULT'), 1000);
             }
         }
@@ -162,8 +172,24 @@ const PINLockOverlay = () => {
     };
 
     if (!isAppLocked && savedPINHash) return null;
+    if (!isAppLocked && !isSyncing && !savedPINHash && !isSettingMode) return null;
 
     const keypad = [1, 2, 3, 4, 5, 6, 7, 8, 9, 'DELETE', 0, 'SUBMIT'];
+
+    if (isSyncing && isAppLocked) {
+        return (
+            <div className="fixed inset-0 z-9999 flex flex-col items-center justify-center bg-slate-950 text-white">
+                <motion.div 
+                    animate={{ scale: [1, 1.1, 1], opacity: [0.5, 1, 0.5] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="h-20 w-20 rounded-3xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-6"
+                >
+                    <Shield size={40} className="text-primary" />
+                </motion.div>
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary animate-pulse">Initializing Encryption...</p>
+            </div>
+        );
+    }
 
     return (
         <motion.div 

@@ -12,7 +12,7 @@ const STATUS = {
 };
 
 const BiometricModal = ({ isOpen, onClose, onSuccess }) => {
-    const { registerBiometrics, isWebAuthnSupported } = useSecurity();
+    const { registerBiometrics, isWebAuthnSupported, isSyncing } = useSecurity();
     const [status, setStatus] = useState(STATUS.IDLE);
     const [errorMessage, setErrorMessage] = useState('');
 
@@ -77,7 +77,7 @@ const BiometricModal = ({ isOpen, onClose, onSuccess }) => {
 
     const statusMessage = {
         [STATUS.IDLE]: 'Initializing secure channel...',
-        [STATUS.WAITING]: 'Waiting for System Authentication...',
+        [STATUS.WAITING]: isSyncing ? 'Synchronizing with cloud...' : 'Waiting for System Authentication...',
         [STATUS.SUCCESS]: 'Biometric Access Linked Successfully.',
         [STATUS.ERROR]: errorMessage || 'Authentication failed.',
     };

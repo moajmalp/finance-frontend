@@ -29,7 +29,7 @@ const SettingsPage = () => {
     const { 
         isBiometricEnabled, setIsBiometricEnabled, 
         isPatternLockEnabled, setIsPatternLockEnabled, 
-        isIntruderSnapshotEnabled, setIsIntruderSnapshotEnabled,
+        isIntruderSnapshotEnabled, toggleIntruderSnapshot,
         setPIN, verifyPIN, clearPIN, deregisterBiometrics, savedPINHash,
         biometricCredentialId
     } = useSecurity()
@@ -544,7 +544,7 @@ const SettingsPage = () => {
                                             </div>
                                         </div>
                                         <button
-                                            onClick={() => { haptics.light(); setIsIntruderSnapshotEnabled(!isIntruderSnapshotEnabled); }}
+                                            onClick={() => { haptics.light(); toggleIntruderSnapshot(!isIntruderSnapshotEnabled); }}
                                             className={cn(
                                                 "relative flex h-8 w-14 items-center rounded-full p-1 transition-colors focus:outline-none",
                                                 isIntruderSnapshotEnabled ? "bg-rose-500" : "bg-muted"

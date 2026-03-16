@@ -84,6 +84,24 @@ export interface BudgetAlertEmailPayload {
     level: 'approaching' | 'exceeded';
 }
 
+export interface SecurityConfigData {
+    hashed_pin?: string;
+    security_answer?: string;
+    biometric_credential_id?: string;
+    is_biometric_enabled?: boolean;
+}
+
+export interface IntruderLogData {
+    snapshot: string; // Base64
+}
+
+export interface SecurityLog {
+    id: number;
+    timestamp: string;
+    snapshot_data: string;
+    status: string;
+}
+
 // --- Axios Instance ---
 
 const apiClient = axios.create({
@@ -300,6 +318,43 @@ export const downloadTransactionsExcel = async (month?: string) => {
     return response.data as Blob;
 };
 
+// --- Security ---
+
+export const fetchSecurityConfig = async () => {
+    const response = await apiClient.get('/api/security/config');
+    return response.data;
+};
+
+export const updateSecurityConfig = async (data: any) => {
+    const response = await apiClient.put('/api/security/config', data);
+    return response.data;
+};
+
+export const registerBiometric = async (credentialId: string) => {
+    const response = await apiClient.post('/api/security/register-biometric', { credential_id: credentialId });
+    return response.data;
+};
+
+export const logIntruder = async (snapshot: string) => {
+    const response = await apiClient.post('/api/security/log-intruder', { snapshot });
+    return response.data;
+};
+
+export const fetchSecurityLogs = async () => {
+    const response = await apiClient.get('/api/security/logs');
+    return response.data;
+};
+
+export const deleteSecurityLog = async (logId: number) => {
+    const response = await apiClient.delete(`/api/security/logs/${logId}`);
+    return response.data;
+};
+
+export const clearAllSecurityLogs = async () => {
+    const response = await apiClient.delete('/api/security/logs');
+    return response.data;
+};
+
 // --- Default Export ---
 
 
@@ -334,6 +389,13 @@ const api = {
     sendBudgetAlertEmail,
     downloadMonthlyPdf,
     downloadTransactionsExcel,
+    fetchSecurityConfig,
+    updateSecurityConfig,
+    registerBiometric,
+    logIntruder,
+    fetchSecurityLogs,
+  deleteSecurityLog,
+  clearAllSecurityLogs,
 };
 
 export default api;

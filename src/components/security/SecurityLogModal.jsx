@@ -5,7 +5,7 @@ import haptics from '../../lib/haptics';
 import { cn } from '../../lib/utils';
 
 const SecurityLogModal = ({ isOpen, onClose }) => {
-    const { intruderLogs, deleteLog, clearAllLogs } = useSecurity();
+    const { intruderLogs, deleteLog, clearAllLogs, isSyncing } = useSecurity();
 
     const formatDate = (isoString) => {
         const date = new Date(isoString);
@@ -67,7 +67,12 @@ const SecurityLogModal = ({ isOpen, onClose }) => {
 
                     {/* Content */}
                     <div className="flex-1 overflow-y-auto p-8 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-                        {intruderLogs.length === 0 ? (
+                        {isSyncing ? (
+                            <div className="h-full flex flex-col items-center justify-center">
+                                <div className="h-12 w-12 rounded-full border-2 border-primary border-t-transparent animate-spin mb-4" />
+                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Synchronizing Logs...</p>
+                            </div>
+                        ) : intruderLogs.length === 0 ? (
                             <div className="h-full flex flex-col items-center justify-center text-center opacity-40">
                                 <CameraOff size={80} className="text-slate-500 mb-6" />
                                 <h3 className="text-xl font-black text-white uppercase tracking-widest">No Intrusions Detected</h3>
@@ -116,7 +121,7 @@ const SecurityLogModal = ({ isOpen, onClose }) => {
                     {/* Footer Info */}
                     <div className="p-6 border-t border-white/5 bg-slate-900/50 flex items-center justify-center gap-2 text-[8px] font-black text-slate-500 uppercase tracking-[0.3em]">
                         <AlertCircle size={12} />
-                        Snapshots are stored locally on your device
+                        Snapshots are encrypted and stored in your security cloud
                     </div>
                 </motion.div>
             </motion.div>
