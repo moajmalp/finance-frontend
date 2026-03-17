@@ -458,14 +458,14 @@ const Transactions = () => {
 
                             {/* Calendar Grid */}
                             <div className="mt-4">
-                                <div className="grid grid-cols-7 gap-2 mb-2">
+                                <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-2">
                                     {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((d) => (
                                         <span key={d} className="text-[10px] font-black text-muted-foreground text-center uppercase">
                                             {d}
                                         </span>
                                     ))}
                                 </div>
-                                <div className="grid grid-cols-7 gap-2">
+                                <div className="grid grid-cols-7 gap-1 sm:gap-2">
                                     {Array.from({ length: new Date(heatmapDate.getFullYear(), heatmapDate.getMonth(), 1).getDay() }).map((_, idx) => (
                                         <div key={`empty-${idx}`} />
                                     ))}
@@ -475,20 +475,20 @@ const Transactions = () => {
                                         const isSelected = selectedCalendarDate === dateStr
                                         const bucket = dailyBuckets[day]
                                         const netLabel = bucket ? bucket.net : 0
-
+ 
                                         return (
                                             <button
                                                 key={day}
                                                 type="button"
                                                 onClick={() => setSelectedCalendarDate(dateStr)}
                                                 className={cn(
-                                                    'h-16 rounded-2xl border text-xs flex flex-col items-center justify-center gap-1 transition-all font-bold',
+                                                    'h-11 sm:h-16 rounded-xl sm:rounded-2xl border text-[10px] sm:text-xs flex flex-col items-center justify-center gap-0.5 sm:gap-1 transition-all font-bold',
                                                     getDayIntensityClass(day),
                                                     isSelected && 'ring-2 ring-offset-2 ring-primary ring-offset-background scale-105'
                                                 )}
                                             >
-                                                <span className="text-[11px]">{day}</span>
-                                                <span className="text-[9px] font-black opacity-80">
+                                                <span className="text-[10px] sm:text-[11px]">{day}</span>
+                                                <span className="text-[8px] sm:text-[9px] font-black opacity-80">
                                                     {bucket
                                                         ? `${bucket.net >= 0 ? '+' : '-'}${Math.abs(netLabel).toFixed(0)}`
                                                         : '—'}
@@ -497,6 +497,7 @@ const Transactions = () => {
                                         )
                                     })}
                                 </div>
+
                             </div>
 
                             {/* Legend */}

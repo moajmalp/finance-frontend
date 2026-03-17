@@ -177,7 +177,8 @@ const AddTransaction = ({ onSuccess }) => {
                 </div>
             </div>
 
-            <Card className="shadow-2xl shadow-indigo-500/5 relative overflow-hidden rounded-[2.5rem] border-none p-6 sm:p-10">
+            <Card className="shadow-2xl shadow-indigo-500/5 relative rounded-[2.5rem] border-none p-6 sm:p-10">
+
                 <form onSubmit={handleSubmit} className="space-y-8 relative z-10">
                     <div className="flex p-1.5 bg-card-muted/50 border border-border/50 rounded-2xl">
                         {['EXPENSE', 'INCOME'].map((type) => (
