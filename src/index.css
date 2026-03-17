@@ -50,7 +50,7 @@
   --primary-glow: rgba(168, 85, 247, 0.2);
   --primary-foreground: #ffffff;
 
-  --card-bg: rgba(21, 0, 59, 0.4);
+  --card-bg: rgba(21, 0, 59, 0.9);
   --card-border: rgba(255, 255, 255, 0.1);
   --card-foreground: #f8fafc;
   --card-muted: rgba(21, 0, 59, 0.2);

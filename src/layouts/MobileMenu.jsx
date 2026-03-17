@@ -44,7 +44,7 @@ const MobileMenu = ({ isOpen, onClose, activeTab, setActiveTab }) => {
                         animate={{ x: 0 }}
                         exit={{ x: '100%' }}
                         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                        className="fixed inset-y-0 right-0 w-[80%] max-w-sm bg-card/95 backdrop-blur-2xl border-l border-white/10 z-[70] lg:hidden flex flex-col p-8"
+                        className="fixed inset-y-0 right-0 w-[80%] max-w-sm glass-premium border-l border-white/10 z-[70] lg:hidden flex flex-col p-8"
                     >
                         <div className="flex items-center justify-between mb-10">
                             <div className="flex items-center gap-3">
