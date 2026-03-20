@@ -48,7 +48,17 @@ export const TransactionProvider = ({ children }) => {
     const [debts, setDebts] = useState([])
     const [alerts, setAlerts] = useState(() => getSafeStorage(STORAGE_KEYS.ALERTS, []))
     const [isPrivacyMode, setIsPrivacyMode] = useState(() => getSafeStorage(STORAGE_KEYS.PRIVACY, false))
-    const [currency, setCurrency] = useState('INR')
+    const [currency, setCurrencyState] = useState('INR')
+    
+    // Wrapper to persist currency
+    const setCurrency = async (newCurrency) => {
+        setCurrencyState(newCurrency)
+        try {
+            await api.updateUserConfig({ currency: newCurrency })
+        } catch (e) {
+            console.error("Failed to persist currency change", e)
+        }
+    }
     const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone)
     const [subscriptionKeywords, setSubscriptionKeywords] = useState(DEFAULT_SUB_KEYWORDS)
     const [goals, setGoals] = useState([])
@@ -686,32 +696,60 @@ export const TransactionProvider = ({ children }) => {
         setAlerts([])
     }
 
-    const addSubscriptionKeyword = (keyword) => {
+    const addSubscriptionKeyword = async (keyword) => {
         if (!subscriptionKeywords.includes(keyword)) {
-            setSubscriptionKeywords(prev => [...prev, keyword])
+            const newKeywords = [...subscriptionKeywords, keyword]
+            setSubscriptionKeywords(newKeywords)
             logActivity('Configuration Updated', `Added '${keyword}' to subscription detector`)
+            try {
+                await api.updateUserConfig({ subscription_keywords: newKeywords })
+            } catch (e) {
+                console.error("Failed to persist subscription keyword", e)
+            }
         }
     }
 
-    const addCategory = (type, name) => {
-        setCategories(prev => ({
-            ...prev,
-            [type]: [...(prev[type] || []), name]
-        }))
+    const addCategory = async (type, name) => {
+        const upType = type.toUpperCase()
+        const newTypeCategories = [...(categories[upType] || []), name]
+        const newCategories = {
+            ...categories,
+            [upType]: newTypeCategories
+        }
+        setCategories(newCategories)
         logActivity('Configuration Updated', `New ${type} category: ${name}`)
+        try {
+            await api.updateUserConfig({ categories: newCategories })
+        } catch (e) {
+            console.error("Failed to persist new category", e)
+        }
     }
 
-    const deleteCategory = (type, name) => {
-        setCategories(prev => ({
-            ...prev,
-            [type]: (prev[type] || []).filter(c => c !== name)
-        }))
+    const deleteCategory = async (type, name) => {
+        const upType = type.toUpperCase()
+        const newTypeCategories = (categories[upType] || []).filter(c => c !== name)
+        const newCategories = {
+            ...categories,
+            [upType]: newTypeCategories
+        }
+        setCategories(newCategories)
         logActivity('Configuration Updated', `Removed ${type} category: ${name}`)
+        try {
+            await api.updateUserConfig({ categories: newCategories })
+        } catch (e) {
+            console.error("Failed to persist category deletion", e)
+        }
     }
 
-    const deleteSubscriptionKeyword = (keyword) => {
-        setSubscriptionKeywords(prev => prev.filter(k => k !== keyword))
+    const deleteSubscriptionKeyword = async (keyword) => {
+        const newKeywords = subscriptionKeywords.filter(k => k !== keyword)
+        setSubscriptionKeywords(newKeywords)
         logActivity('Configuration Updated', `Removed '${keyword}' from subscription detector`)
+        try {
+            await api.updateUserConfig({ subscription_keywords: newKeywords })
+        } catch (e) {
+            console.error("Failed to persist keyword deletion", e)
+        }
     }
 
     return (
