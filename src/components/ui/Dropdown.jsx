@@ -71,10 +71,10 @@ const Dropdown = ({
                             initial={{ opacity: 0, y: 10, scale: 0.95 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                            className="absolute z-50 w-full mt-2 glass-premium border border-border/50 rounded-[2rem] shadow-premium overflow-hidden origin-top"
+                            className="absolute z-50 w-full mt-2 bg-card/95 glass-premium border border-border/50 rounded-[2rem] shadow-premium overflow-hidden origin-top max-h-[60vh] flex flex-col"
                         >
                             {searchable && (
-                                <div className="p-3 border-b border-border/50 bg-muted/30 dark:bg-slate-900/50">
+                                <div className="p-3 border-b border-border/50 bg-muted/40 dark:bg-slate-900/60 backdrop-blur-sm">
                                     <div className="relative">
                                         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                                         <input

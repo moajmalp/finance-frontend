@@ -84,7 +84,7 @@ const Calendar = ({ value, onChange, label, error, className, required }) => {
                             initial={{ opacity: 0, y: 10, scale: 0.95 }}
                             animate={{ opacity: 1, y: 4, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
-                            className="absolute z-50 mt-2 w-[calc(100vw-2rem)] sm:w-80 p-5 glass-premium rounded-[2.5rem] shadow-premium border border-border origin-top left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:right-0"
+                            className="absolute z-50 mt-2 w-[calc(100vw-3rem)] sm:w-80 p-5 glass-premium rounded-[2.5rem] shadow-premium border border-border origin-top left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:right-0 max-h-[75vh] md:max-h-[80vh] overflow-y-auto scrollbar-none"
                         >
                             <div className="flex items-center justify-between mb-6">
                                 <button type="button" onClick={prevMonth} className="p-2 hover:bg-muted rounded-xl text-muted-foreground transition-all">
