@@ -26,7 +26,14 @@ function AppContent() {
   const { isAuthenticated } = useAuth()
   const { toggleTheme } = useTheme()
 
-  const [activeTab, setActiveTab] = useState('dashboard')
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem('activeTab') || 'dashboard'
+  })
+
+  // Persist activeTab to localStorage
+  useEffect(() => {
+    localStorage.setItem('activeTab', activeTab)
+  }, [activeTab])
 
   // Global Shortcut: Ctrl/Cmd + Space (Privacy) | Shift + Space (Theme)
   useEffect(() => {
@@ -62,12 +69,8 @@ function AppContent() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [setIsPrivacyMode, toggleTheme])
 
-  // Reset to dashboard on login
-  useEffect(() => {
-    if (isAuthenticated) {
-      setActiveTab('dashboard')
-    }
-  }, [isAuthenticated])
+  // Reset to dashboard only if explicitly requested or on specific auth changes 
+  // (Removing the automatic reset on every 'isAuthenticated' change to allow persistence)
 
   if (!isAuthenticated) {
     return <LoginPage />
