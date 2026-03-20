@@ -163,7 +163,7 @@ const Accounts = () => {
                 <div className="absolute top-[-20%] right-[-10%] w-[60%] h-[150%] bg-white/10 rounded-full blur-[100px] group-hover:scale-125 transition-transform duration-[2000ms]" />
                 <div className="relative z-10">
                     <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/60">Total Capital Balance</p>
-                    <h2 className="text-4xl sm:text-6xl font-black mt-4 tracking-tighter leading-tight flex items-baseline">
+                    <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black mt-4 tracking-tighter leading-tight flex flex-wrap items-baseline gap-x-2">
                         <PrivacyValue>{currencySymbol}</PrivacyValue>
                         <PrivacyValue>{totalNetWorth.toLocaleString(undefined, { minimumFractionDigits: 2 })}</PrivacyValue>
                     </h2>
@@ -257,7 +257,7 @@ const Accounts = () => {
                                     </div>
                                     <div className="mt-8 flex-1">
                                         <p className="text-xs font-black text-muted-foreground uppercase tracking-widest font-bold">Available Balance</p>
-                                        <div className={cn("text-3xl font-black mt-2 tracking-tight flex items-baseline", balance < 0 ? 'text-rose-theme' : 'text-foreground')}>
+                                        <div className={cn("text-2xl sm:text-3xl font-black mt-2 tracking-tight flex flex-wrap items-baseline gap-x-1", balance < 0 ? 'text-rose-theme' : 'text-foreground')}>
                                             <PrivacyValue>{currencySymbol}</PrivacyValue>
                                             <PrivacyValue>{balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}</PrivacyValue>
                                         </div>

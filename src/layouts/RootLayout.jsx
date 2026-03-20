@@ -13,9 +13,13 @@ const RootLayout = ({ children, activeTab, setActiveTab, onOpenNotifications, un
     const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false)
     const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false)
 
+    // Check if running on localhost for Dev Mode indicator
+    const isLocalhost = typeof window !== 'undefined' && 
+        (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+
     return (
         <div className={cn(
-            "min-h-screen transition-all duration-500 transition-colors duration-500",
+            "min-h-screen transition-all duration-500",
             isSidebarCollapsed ? "lg:pl-24" : "lg:pl-64"
         )}>
             <Sidebar
@@ -34,6 +38,9 @@ const RootLayout = ({ children, activeTab, setActiveTab, onOpenNotifications, un
             )}>
                 <div className="flex items-center gap-4">
                     <h1 className="text-xl font-black text-slate-900 dark:text-transparent dark:bg-clip-text dark:bg-linear-to-br dark:from-slate-300 dark:via-white dark:to-slate-400 tracking-tight capitalize">{activeTab.replace('_', ' ')}</h1>
+                    {isLocalhost && (
+                        <div className="h-2 w-2 rounded-full bg-yellow-400 shadow-[0_0_12px_rgba(250,204,21,0.6)] animate-pulse" title="Dev Mode (Localhost)" />
+                    )}
                 </div>
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2 border-r border-border/50 pr-4 mr-2">
@@ -100,6 +107,9 @@ const RootLayout = ({ children, activeTab, setActiveTab, onOpenNotifications, un
                             <Menu size={20} />
                         </button>
                         <div className="h-2 w-2 rounded-full bg-primary animate-pulse shadow-glow" />
+                        {isLocalhost && (
+                            <div className="h-2 w-2 rounded-full bg-yellow-400 shadow-[0_0_12px_rgba(250,204,21,0.6)] animate-pulse" title="Dev Mode (Localhost)" />
+                        )}
                         <h1 className="text-sm font-black text-slate-900 dark:text-transparent dark:bg-clip-text dark:bg-linear-to-br dark:from-slate-300 dark:via-white dark:to-slate-400 uppercase tracking-[0.2em]">{activeTab.replace('_', ' ')}</h1>
                     </div>
                     <div className="flex items-center gap-2">

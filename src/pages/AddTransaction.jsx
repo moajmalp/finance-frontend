@@ -199,20 +199,48 @@ const AddTransaction = ({ onSuccess }) => {
                     </div>
 
                     <div className="space-y-6">
-                        <Input
-                            label="Transaction Amount"
-                            type="number"
-                            step="0.01"
-                            placeholder="0.00"
-                            value={formData.amount}
-                            onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                            error={errors.amount}
-                            required
-                            className={cn(
-                                "h-16 text-2xl font-black rounded-2xl bg-card/50 transition-all duration-500",
-                                scanSuccess && "border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-500/5"
-                            )}
-                        />
+                        <div className="space-y-4">
+                            <Input
+                                label="Transaction Amount"
+                                type="number"
+                                step="0.01"
+                                placeholder="0.00"
+                                value={formData.amount}
+                                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                                error={errors.amount}
+                                required
+                                className={cn(
+                                    "h-16 text-2xl font-black rounded-2xl bg-card/50 transition-all duration-500",
+                                    scanSuccess && "border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-500/5"
+                                )}
+                            />
+
+                            {/* Quick Select Amounts */}
+                            <div className="flex flex-wrap gap-2 px-1">
+                                {[10, 20, 50, 100, 200, 500].map((amt) => (
+                                    <button
+                                        key={amt}
+                                        type="button"
+                                        onClick={() => setFormData({ ...formData, amount: String(amt) })}
+                                        className={cn(
+                                            "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border",
+                                            formData.amount === String(amt)
+                                                ? "bg-primary text-white border-primary shadow-lg shadow-primary/20"
+                                                : "bg-card border-border/50 text-muted-foreground hover:border-primary/30 hover:text-foreground"
+                                        )}
+                                    >
+                                        {currencySymbol}{amt}
+                                    </button>
+                                ))}
+                                <button
+                                    type="button"
+                                    onClick={() => setFormData({ ...formData, amount: '' })}
+                                    className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border bg-card border-border/50 text-rose-500 hover:bg-rose-500/5 hover:border-rose-500/30"
+                                >
+                                    Clear
+                                </button>
+                            </div>
+                        </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 relative z-[102]">
                             <Dropdown
