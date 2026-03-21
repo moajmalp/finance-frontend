@@ -117,12 +117,6 @@ const LoginPage = () => {
                         </Button>
                     </form>
 
-                    <div className="mt-10 pt-6 border-t border-white/5 opacity-40">
-                        <div className="flex flex-col items-center gap-1">
-                            <span className="text-[8px] font-black uppercase tracking-[0.2em]">Identity: ajmal</span>
-                            <span className="text-[8px] font-black uppercase tracking-[0.2em]">Key: Aju@10064</span>
-                        </div>
-                    </div>
                 </div>
             </motion.div>
         </div>
