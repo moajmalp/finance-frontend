@@ -256,7 +256,7 @@ const SettingsPage = () => {
                                             if (newKeyword.trim()) {
                                                 addSubscriptionKeyword(newKeyword.trim())
                                                 setNewKeyword('')
-                                                setToast({ isOpen: true, message: 'Keyword added' })
+                                                toast.success('Keyword added')
                                             }
                                         }
                                     }}
