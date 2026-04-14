@@ -8,14 +8,10 @@ const LoginPage = () => {
     const { login } = useAuth()
     const [formData, setFormData] = useState({ username: '', password: '' })
     const [showPassword, setShowPassword] = useState(false)
-    const [error, setError] = useState('')
 
     const handleSubmit = async (e) => {
         e.preventDefault()
-        const success = await login(formData.username, formData.password)
-        if (!success) {
-            setError('Invalid username or password')
-        }
+        await login(formData.username, formData.password)
     }
 
     return (
@@ -97,16 +93,6 @@ const LoginPage = () => {
                             </label>
                             <button type="button" className="text-[10px] font-bold text-primary/60 uppercase tracking-widest hover:text-primary transition-colors italic">Reset Key?</button>
                         </div>
-
-                        {error && (
-                            <motion.p
-                                initial={{ opacity: 0, y: -5 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="text-[10px] font-black text-rose-500 text-center uppercase tracking-widest ring-1 ring-rose-500/10 py-2 rounded-xl bg-rose-500/5"
-                            >
-                                {error}
-                            </motion.p>
-                        )}
 
                         <Button
                             type="submit"
