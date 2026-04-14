@@ -83,7 +83,7 @@ const Analytics = () => {
                         </div>
                     </div>
                     <div className="h-[280px] sm:h-[350px] w-full min-h-[280px]">
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={1}>
                             <AreaChart data={trendData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
                                 <defs>
                                     <linearGradient id="colorInc" x1="0" y1="0" x2="0" y2="1">
@@ -118,7 +118,7 @@ const Analytics = () => {
                     </div>
                     <div className="flex flex-col sm:flex-row items-center gap-10">
                         <div className="h-[240px] w-full sm:w-1/2 min-h-[240px]">
-                            <ResponsiveContainer width="100%" height="100%">
+                            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={1}>
                                 <PieChart>
                                     <Pie data={pieData} innerRadius={60} outerRadius={85} paddingAngle={10} dataKey="value" stroke="none">
                                         {pieData.map((entry, index) => <Cell key={index} fill={COLORS[index % COLORS.length]} />)}

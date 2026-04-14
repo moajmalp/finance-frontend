@@ -282,7 +282,9 @@ const Dashboard = () => {
                         <div className="space-y-6">
                             {goals && goals.length > 0 ? (
                                 goals.slice(0, 3).map(goal => {
-                                    const percent = Math.min((goal.currentAmount / goal.targetAmount) * 100, 100)
+                                    const currentAmount = goal.currentAmount ?? goal.current_amount ?? 0
+                                    const targetAmount = goal.targetAmount ?? goal.target_amount ?? 0
+                                    const percent = targetAmount > 0 ? Math.min((currentAmount / targetAmount) * 100, 100) : 0
                                     return (
                                         <div key={goal.id} className="space-y-2">
                                             <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-muted-foreground">
