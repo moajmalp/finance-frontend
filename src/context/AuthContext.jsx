@@ -12,12 +12,15 @@ export const AuthProvider = ({ children }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('token'));
     const [loading, setLoading] = useState(true);
 
-    const logout = useCallback(() => {
+    const logout = useCallback((options = {}) => {
+        const { silent = false } = options;
         localStorage.removeItem('token');
         setToken(null);
         setIsAuthenticated(false);
         setUser(null);
-        toast.success('Logged out successfully');
+        if (!silent) {
+            toast.success('Logged out successfully');
+        }
     }, []);
 
     const loadProfile = useCallback(async () => {
@@ -28,7 +31,7 @@ export const AuthProvider = ({ children }) => {
             console.error("Failed to load profile", error);
             // If token is invalid, logout
             if (error.response?.status === 401) {
-                logout();
+                logout({ silent: true });
             }
         } finally {
             setLoading(false);
@@ -44,7 +47,7 @@ export const AuthProvider = ({ children }) => {
 
         const handleUnauthorized = () => {
             console.warn("AuthContext: 'unauthorized' event received. Calling logout()...");
-            logout();
+            logout({ silent: true });
         };
 
         console.log("AuthContext: Adding 'unauthorized' event listener to window.");
