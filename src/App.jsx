@@ -23,7 +23,7 @@ import { Home, List, PlusCircle, Settings, Wallet, Repeat, Target, History, BarC
 
 function AppContent() {
   const { isPrivacyMode, setIsPrivacyMode, alerts } = useTransactions()
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, loading } = useAuth()
   const { toggleTheme } = useTheme()
 
   const [activeTab, setActiveTab] = useState(() => {
@@ -71,6 +71,10 @@ function AppContent() {
 
   // Reset to dashboard only if explicitly requested or on specific auth changes 
   // (Removing the automatic reset on every 'isAuthenticated' change to allow persistence)
+
+  if (loading) {
+    return <div className="min-h-screen bg-background" />
+  }
 
   if (!isAuthenticated) {
     return <LoginPage />

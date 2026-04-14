@@ -59,7 +59,15 @@ export const TransactionProvider = ({ children }) => {
             console.error("Failed to persist currency change", e)
         }
     }
-    const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone)
+    const [timezone, setTimezoneState] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone)
+    const setTimezone = async (newTimezone) => {
+        setTimezoneState(newTimezone)
+        try {
+            await api.updateUserConfig({ timezone: newTimezone })
+        } catch (e) {
+            console.error("Failed to persist timezone change", e)
+        }
+    }
     const [subscriptionKeywords, setSubscriptionKeywords] = useState(DEFAULT_SUB_KEYWORDS)
     const [goals, setGoals] = useState([])
 
@@ -73,7 +81,7 @@ export const TransactionProvider = ({ children }) => {
     // Track bill reminders sent per day (subscriptions, debts, goals)
     const [billReminderState, setBillReminderState] = useState({})
 
-    const currencySymbol = '₹'
+    const currencySymbol = currency === 'USD' ? '$' : '₹'
 
 
     const { isAuthenticated, user, logout, updateUserCredentials = () => Promise.resolve(false), updateUserProfile = () => Promise.resolve(false) } = useAuth()
@@ -121,13 +129,17 @@ export const TransactionProvider = ({ children }) => {
                 setTransactions(txData)
                 setSubscriptions(subsData)
                 setDebts(debtsData)
-                setGoals(goalsData)
+                setGoals(goalsData.map(goal => ({
+                    ...goal,
+                    targetAmount: goal.target_amount ?? goal.targetAmount,
+                    currentAmount: goal.current_amount ?? goal.currentAmount,
+                    accountId: goal.account_id ?? goal.accountId,
+                })))
 
                 if (configData) {
-                    // Force migrate USD users to INR as per system-wide migration
                     const backendCurrency = configData.currency || 'INR'
-                    setCurrency(backendCurrency === 'USD' ? 'INR' : backendCurrency)
-                    setTimezone(configData.timezone || 'UTC')
+                    setCurrencyState(backendCurrency)
+                    setTimezoneState(configData.timezone || 'UTC')
                     setIsPrivacyMode(configData.is_privacy_mode || false)
                     if (configData.categories) {
                         const normalizedCategories = {}
@@ -137,6 +149,7 @@ export const TransactionProvider = ({ children }) => {
                         setCategories(normalizedCategories)
                     }
                     if (configData.subscription_keywords) setSubscriptionKeywords(configData.subscription_keywords)
+                    if (configData.monthly_spending_limits) setBudgets(configData.monthly_spending_limits)
                 }
             } catch (error) {
                 console.error("Failed to fetch initial data:", error)
@@ -680,7 +693,13 @@ export const TransactionProvider = ({ children }) => {
     }
 
     const setBudget = (category, amount) => {
-        setBudgets(prev => ({ ...prev, [category]: amount }))
+        setBudgets(prev => {
+            const nextBudgets = { ...prev, [category]: amount }
+            api.updateUserConfig({ monthly_spending_limits: nextBudgets }).catch((e) => {
+                console.error("Failed to persist budget change", e)
+            })
+            return nextBudgets
+        })
     }
 
     const addAlert = (message, type = 'info') => {

@@ -161,8 +161,8 @@ const Simulation = () => {
                             </div>
                         </div>
 
-                        <div className="h-[400px] w-full relative z-10">
-                            <ResponsiveContainer width="100%" height="100%">
+                        <div className="h-[400px] min-h-[400px] w-full relative z-10">
+                            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={1}>
                                 <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                                     <defs>
                                         <linearGradient id="colorSim" x1="0" y1="0" x2="0" y2="1">
