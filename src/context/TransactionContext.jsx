@@ -551,6 +551,23 @@ export const TransactionProvider = ({ children }) => {
         }
     }
 
+    const updateSubscription = async (id, updatedData) => {
+        try {
+            const payload = { ...updatedData }
+            if (payload.accountId) { payload.account_id = payload.accountId; delete payload.accountId }
+            if (payload.nextBilling) { payload.next_billing = payload.nextBilling; delete payload.nextBilling }
+            if (payload.autoRenewal !== undefined) { payload.auto_renewal = payload.autoRenewal; delete payload.autoRenewal }
+
+            const updated = await api.updateSubscription(id, payload)
+            setSubscriptions(prev => prev.map(s => s.id === id ? updated : s))
+            logActivity('Subscription Updated', `Updated ${updated.name}`)
+            return updated
+        } catch (e) {
+            console.error("Failed to update subscription", e)
+            throw e
+        }
+    }
+
     const addDebt = async (debt) => {
         try {
             const payload = {
@@ -612,8 +629,8 @@ export const TransactionProvider = ({ children }) => {
             // UpdatedData keys need to match backend snake_case
             // Map common camelCase to snake_case if necessary
             const payload = { ...updatedData }
-            if (payload.accountId) { payload.account_id = payload.accountId; delete payload.accountId }
-            if (payload.receiptUrl) { payload.receipt_url = payload.receiptUrl; delete payload.receiptUrl }
+            if ('accountId' in payload) { payload.account_id = payload.accountId; delete payload.accountId }
+            if ('receiptUrl' in payload) { payload.receipt_url = payload.receiptUrl; delete payload.receiptUrl }
 
             const updated = await api.updateTransaction(id, payload)
             setTransactions(prev => prev.map(t => t.id === id ? updated : t))
@@ -799,6 +816,7 @@ export const TransactionProvider = ({ children }) => {
             updateAccount,
             deleteAccount,
             addSubscription,
+            updateSubscription,
             deleteSubscription,
             addDebt,
             deleteDebt,

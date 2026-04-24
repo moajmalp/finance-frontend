@@ -5,12 +5,24 @@ import { Lock, User, Mail, Check, Info, Eye, EyeOff } from 'lucide-react'
 import Button from '../components/ui/Button'
 
 const LoginPage = () => {
-    const { login } = useAuth()
+    const { login, register } = useAuth()
     const [formData, setFormData] = useState({ username: '', password: '' })
     const [showPassword, setShowPassword] = useState(false)
+    const [isRegisterMode, setIsRegisterMode] = useState(false)
 
     const handleSubmit = async (e) => {
         e.preventDefault()
+        if (isRegisterMode) {
+            try {
+                const created = await register(formData.username, formData.password)
+                if (created) {
+                    setIsRegisterMode(false)
+                }
+            } catch {
+                // Toast is already handled in AuthContext.
+            }
+            return
+        }
         await login(formData.username, formData.password)
     }
 
@@ -37,7 +49,9 @@ const LoginPage = () => {
                             <User size={48} className="text-primary/60" strokeWidth={1.5} />
                         </div>
                         <h1 className="text-2xl font-black text-foreground tracking-tight">Finance OS</h1>
-                        <p className="text-[10px] font-black text-primary/60 uppercase tracking-[0.3em] mt-2">Access Secure Vault</p>
+                        <p className="text-[10px] font-black text-primary/60 uppercase tracking-[0.3em] mt-2">
+                            {isRegisterMode ? 'Create Secure Vault' : 'Access Secure Vault'}
+                        </p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-8">
@@ -91,7 +105,13 @@ const LoginPage = () => {
                                 </div>
                                 <span className="text-[10px] font-bold text-muted-foreground uppercase">Remember</span>
                             </label>
-                            <button type="button" className="text-[10px] font-bold text-primary/60 uppercase tracking-widest hover:text-primary transition-colors italic">Reset Key?</button>
+                            <button
+                                type="button"
+                                onClick={() => setIsRegisterMode(prev => !prev)}
+                                className="text-[10px] font-bold text-primary/60 uppercase tracking-widest hover:text-primary transition-colors italic"
+                            >
+                                {isRegisterMode ? 'Have Access?' : 'Create Account?'}
+                            </button>
                         </div>
 
                         <Button
@@ -99,7 +119,7 @@ const LoginPage = () => {
                             className="w-full h-14 bg-primary text-white text-xs font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all relative overflow-hidden group"
                         >
                             <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-                            <span className="relative z-10">Initialize Session</span>
+                            <span className="relative z-10">{isRegisterMode ? 'Create Account' : 'Initialize Session'}</span>
                         </Button>
                     </form>
 

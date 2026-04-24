@@ -86,8 +86,11 @@ const AddTransaction = ({ onSuccess }) => {
     const handleFileChange = async (e) => {
         const file = e.target.files[0]
         if (file) {
-            const url = URL.createObjectURL(file)
-            setFormData(prev => ({ ...prev, receiptUrl: url }))
+            const reader = new FileReader()
+            reader.onloadend = () => {
+                setFormData(prev => ({ ...prev, receiptUrl: reader.result }))
+            }
+            reader.readAsDataURL(file)
 
             setIsScanning(true)
             try {

@@ -352,11 +352,6 @@ export const SecurityProvider = ({ children }) => {
         setIsAppLocked(true);
     };
 
-    const triggerPINVerify = () => {
-        setIsSettingPIN(false);
-        setIsAppLocked(true);
-    };
-
     const togglePINLock = async (enabled) => {
         setIsSyncing(true);
         try {
@@ -397,7 +392,6 @@ export const SecurityProvider = ({ children }) => {
             isSettingPIN,
             setIsSettingPIN,
             triggerPINSetup,
-            triggerPINVerify,
             togglePINLock,
             isWebAuthnSupported,
             registerBiometrics,

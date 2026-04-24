@@ -13,6 +13,7 @@ import EmptyState from '../components/ui/EmptyState'
 import { useTransactions } from '../context/TransactionContext'
 import { useSecurity } from '../context/SecurityContext'
 import haptics from '../lib/haptics'
+import api from '../services/api'
 import SecurityLogModal from '../components/security/SecurityLogModal'
 import BiometricModal from '../components/security/BiometricModal'
 
@@ -31,7 +32,7 @@ const SettingsPage = () => {
         isPatternLockEnabled, setIsPatternLockEnabled, 
         isIntruderSnapshotEnabled, toggleIntruderSnapshot,
         setPIN, verifyPIN, clearPIN, deregisterBiometrics, savedPINHash,
-        biometricCredentialId, triggerPINSetup, triggerPINVerify, togglePINLock
+        biometricCredentialId, triggerPINSetup, togglePINLock
     } = useSecurity()
 
     const [showLogModal, setShowLogModal] = useState(false)
@@ -103,6 +104,25 @@ const SettingsPage = () => {
             }
         })
         setIsConfirmModalOpen(true)
+    }
+    
+    const handleExportLedgerCsv = async () => {
+        try {
+            const blob = await api.downloadTransactionsExcel()
+            const fileName = `ledger-${new Date().toISOString().slice(0, 10)}.xlsx`
+            const objectUrl = window.URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = objectUrl
+            link.download = fileName
+            document.body.appendChild(link)
+            link.click()
+            link.remove()
+            window.URL.revokeObjectURL(objectUrl)
+            toast.success('Ledger export started')
+        } catch (error) {
+            console.error('Failed to export ledger', error)
+            toast.error('Failed to export ledger')
+        }
     }
 
     const expenseCategories = Array.isArray(categories.expense) ? categories.expense : []
@@ -758,9 +778,9 @@ const SettingsPage = () => {
 
                     <div className="pt-10 mt-2 border-t border-border/50 flex flex-col sm:flex-row justify-between items-center gap-6 relative z-10">
                         <div className="flex items-center gap-4 w-full sm:w-auto">
-                            <Button variant="ghost" className="h-12 px-6 gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-xl w-full sm:w-auto">
+                            <Button onClick={handleExportLedgerCsv} variant="ghost" className="h-12 px-6 gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-xl w-full sm:w-auto">
                                 <Download size={18} />
-                                Export Ledger (CSV)
+                                Export Ledger (Excel)
                             </Button>
                         </div>
                         <div className="flex items-center gap-2 group/version">

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search, TrendingUp, TrendingDown, Filter, Edit2, Trash2, Calendar as CalendarIcon, ArrowLeftRight, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, TrendingUp, TrendingDown, Filter, Edit2, Trash2, Calendar as CalendarIcon, ArrowLeftRight, ChevronLeft, ChevronRight, Paperclip } from 'lucide-react'
 import Card from '../components/ui/Card'
 import Dropdown from '../components/ui/Dropdown'
 import Button from '../components/ui/Button'
@@ -41,6 +41,9 @@ const Transactions = () => {
     // Edit state
     const [isEditModalOpen, setIsEditModalOpen] = useState(false)
     const [transactionToEdit, setTransactionToEdit] = useState(null)
+
+    // Receipt viewer state
+    const [selectedReceipt, setSelectedReceipt] = useState(null)
 
     const filteredTransactions = transactions.filter(t => {
         const searchTerm = search.trim().toLowerCase()
@@ -339,6 +342,16 @@ const Transactions = () => {
                                             </td>
                                             <td className="px-8 py-6">
                                                 <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    {t.receipt_url && (
+                                                        <button 
+                                                            type="button"
+                                                            title="View Receipt" 
+                                                            onClick={() => setSelectedReceipt(t.receipt_url)}
+                                                            className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                                                        >
+                                                            <Paperclip size={16} />
+                                                        </button>
+                                                    )}
                                                     <button
                                                         onClick={() => handleEditClick(t)}
                                                         className="p-2 text-muted-foreground hover:text-primary hover:bg-muted rounded-lg transition-colors"
@@ -393,6 +406,16 @@ const Transactions = () => {
                                                     <PrivacyValue>{t.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</PrivacyValue>
                                                 </p>
                                                 <div className="flex gap-2">
+                                                    {t.receipt_url && (
+                                                        <button 
+                                                            type="button"
+                                                            title="View Receipt" 
+                                                            onClick={() => setSelectedReceipt(t.receipt_url)}
+                                                            className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary active:scale-95 transition-all"
+                                                        >
+                                                            <Paperclip size={14} />
+                                                        </button>
+                                                    )}
                                                     <button
                                                         onClick={() => handleEditClick(t)}
                                                         className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground active:text-primary active:bg-primary/10 transition-colors"
@@ -582,6 +605,55 @@ const Transactions = () => {
                 }}
                 transaction={transactionToEdit}
             />
+
+            {/* Receipt Viewer Modal */}
+            <AnimatePresence>
+                {selectedReceipt && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setSelectedReceipt(null)}
+                            className="absolute inset-0 bg-background/80 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="relative w-full max-w-4xl max-h-[90vh] flex flex-col bg-card rounded-3xl shadow-2xl border border-border/50 overflow-hidden"
+                        >
+                            <div className="flex items-center justify-between p-6 border-b border-border/50 bg-muted/30">
+                                <h3 className="text-xl font-black text-foreground">Transaction Receipt</h3>
+                                <button
+                                    onClick={() => setSelectedReceipt(null)}
+                                    className="p-2 bg-muted hover:bg-rose-500/10 text-muted-foreground hover:text-rose-500 rounded-xl transition-colors"
+                                >
+                                    <Trash2 className="hidden" /> {/* Just using as a placeholder if needed, but really just want X */}
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                                </button>
+                            </div>
+                            <div className="flex-1 overflow-auto p-6 flex items-center justify-center bg-muted/10">
+                                {selectedReceipt.startsWith('data:image/') || selectedReceipt.startsWith('http') || selectedReceipt.startsWith('blob:') ? (
+                                    <img 
+                                        src={selectedReceipt} 
+                                        alt="Receipt Attachment" 
+                                        className="max-w-full max-h-[60vh] object-contain rounded-xl shadow-lg border border-border/50"
+                                    />
+                                ) : (
+                                    <div className="text-center p-10 bg-muted rounded-2xl">
+                                        <Paperclip size={48} className="mx-auto text-muted-foreground mb-4" />
+                                        <p className="text-sm font-bold text-muted-foreground">Document Format Not Supported for Preview</p>
+                                        <a href={selectedReceipt} download="receipt" className="mt-4 inline-block px-6 py-3 bg-primary text-primary-foreground font-black uppercase tracking-widest text-xs rounded-xl shadow-lg shadow-primary/20 hover:scale-105 transition-transform">
+                                            Download File
+                                        </a>
+                                    </div>
+                                )}
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
 
         </div>
     )

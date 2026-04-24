@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { Camera, X } from 'lucide-react'
 import Modal from './Modal'
 import Input from './Input'
 import Button from './Button'
@@ -15,6 +16,8 @@ const EditTransactionModal = ({ isOpen, onClose, transaction }) => {
     const [type, setType] = useState('EXPENSE')
     const [note, setNote] = useState('')
     const [date, setDate] = useState('')
+    const [receiptUrl, setReceiptUrl] = useState(null)
+    const fileInputRef = useRef(null)
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
 
     useEffect(() => {
@@ -24,8 +27,20 @@ const EditTransactionModal = ({ isOpen, onClose, transaction }) => {
             setType(transaction.type)
             setNote(transaction.note || '')
             setDate(transaction.date)
+            setReceiptUrl(transaction.receipt_url || null)
         }
     }, [transaction])
+
+    const handleFileChange = (e) => {
+        const file = e.target.files[0]
+        if (file) {
+            const reader = new FileReader()
+            reader.onloadend = () => {
+                setReceiptUrl(reader.result)
+            }
+            reader.readAsDataURL(file)
+        }
+    }
 
     const handleSubmit = (e) => {
         e.preventDefault()
@@ -39,7 +54,8 @@ const EditTransactionModal = ({ isOpen, onClose, transaction }) => {
             category,
             type,
             note,
-            date
+            date,
+            receiptUrl
         })
         onClose()
     }
@@ -97,6 +113,49 @@ const EditTransactionModal = ({ isOpen, onClose, transaction }) => {
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
                 />
+
+                <div className="space-y-4 pt-2">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Receipt Attachment</span>
+                    <div className="relative group">
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            accept="image/*"
+                            onChange={handleFileChange}
+                        />
+                        {receiptUrl ? (
+                            <div className="relative rounded-2xl overflow-hidden aspect-[16/9] border-2 border-primary/20 shadow-sm bg-card/50">
+                                {receiptUrl.startsWith('data:image/') || receiptUrl.startsWith('http') || receiptUrl.startsWith('blob:') ? (
+                                    <img src={receiptUrl} alt="Receipt" className="w-full h-full object-cover" />
+                                ) : (
+                                    <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground gap-2">
+                                        <Camera size={24} />
+                                        <span className="text-[10px] font-bold">Document Attached</span>
+                                    </div>
+                                )}
+                                <button
+                                    type="button"
+                                    onClick={() => setReceiptUrl(null)}
+                                    className="absolute top-3 right-3 h-8 w-8 bg-rose-500/90 hover:bg-rose-500 text-white rounded-lg shadow-md flex items-center justify-center hover:scale-105 transition-transform"
+                                >
+                                    <X size={16} />
+                                </button>
+                            </div>
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="w-full py-6 border-2 border-dashed border-border/60 rounded-2xl flex flex-col items-center justify-center gap-3 hover:bg-muted/30 hover:border-primary/30 transition-all group"
+                            >
+                                <div className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center text-muted-foreground group-hover:bg-primary group-hover:text-white transition-all">
+                                    <Camera size={20} />
+                                </div>
+                                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Add Receipt</p>
+                            </button>
+                        )}
+                    </div>
+                </div>
 
                 <div className="flex gap-4 pt-4">
                     <Button type="button" variant="outline" onClick={onClose} className="flex-1 h-14 font-black">

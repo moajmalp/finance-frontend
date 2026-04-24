@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Calendar as CalendarIcon, CreditCard, Plus, Repeat, Trash2, Zap, TrendingUp, AlertCircle, ChevronRight } from 'lucide-react'
+import { Calendar as CalendarIcon, CreditCard, Plus, Repeat, Trash2, Zap, TrendingUp, AlertCircle, ChevronRight, Pause, Play } from 'lucide-react'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import Modal from '../components/ui/Modal'
@@ -17,7 +17,7 @@ import { DashboardSkeleton } from '../skeletons/DashboardSkeleton'
 
 const Subscriptions = () => {
     const isLoading = useMockLoading()
-    const { subscriptions, addSubscription, deleteSubscription, accounts, categories, currencySymbol } = useTransactions()
+    const { subscriptions, addSubscription, updateSubscription, deleteSubscription, accounts, categories, currencySymbol } = useTransactions()
 
     const [isAddModalOpen, setIsAddModalOpen] = useState(false)
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
@@ -95,6 +95,15 @@ const Subscriptions = () => {
         setIsConfirmModalOpen(true)
     }
 
+    const handleToggleActive = async (sub) => {
+        try {
+            await updateSubscription(sub.id, { is_active: !sub.is_active })
+            toast.success(sub.is_active ? 'Subscription paused' : 'Subscription resumed')
+        } catch {
+            toast.error('Failed to update subscription')
+        }
+    }
+
     if (isLoading) return <DashboardSkeleton />
 
     return (
@@ -168,7 +177,10 @@ const Subscriptions = () => {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.05 }}
                     >
-                        <Card className="p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between border-none shadow-premium rounded-[2.5rem] group hover:-translate-y-1 transition-all duration-300 gap-6">
+                        <Card className={cn(
+                            "p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between border-none shadow-premium rounded-[2.5rem] group hover:-translate-y-1 transition-all duration-300 gap-6",
+                            !sub.is_active && "opacity-60 grayscale-[0.2]"
+                        )}>
                             <div className="flex items-center gap-6">
                                 <div className="h-16 w-16 rounded-[1.5rem] bg-muted/50 flex items-center justify-center text-primary group-hover:scale-110 transition-transform shrink-0">
                                     <CreditCard size={28} />
@@ -190,6 +202,13 @@ const Subscriptions = () => {
                                 <p className="text-[10px] font-bold text-muted-foreground uppercase mt-0.5">Due {new Date(sub.next_billing).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</p>
                             </div>
                             <div className="flex items-center gap-4 pt-6 sm:pt-0 border-t sm:border-t-0 border-border/50">
+                                <button
+                                    onClick={() => handleToggleActive(sub)}
+                                    className="h-10 w-10 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl transition-all active:scale-90"
+                                    title={sub.is_active ? 'Pause subscription' : 'Resume subscription'}
+                                >
+                                    {sub.is_active ? <Pause size={18} /> : <Play size={18} />}
+                                </button>
                                 <button
                                     onClick={() => handleDelete(sub)}
                                     className="h-10 w-10 flex items-center justify-center text-muted-foreground hover:text-rose-theme hover:bg-rose-theme-bg rounded-xl transition-all active:scale-90"

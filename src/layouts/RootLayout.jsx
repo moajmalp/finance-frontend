@@ -1,6 +1,5 @@
 import React from 'react'
 import Sidebar from './Sidebar'
-import BottomNav from './BottomNav'
 import MobileMenu from './MobileMenu'
 import { useTransactions } from '../context/TransactionContext'
 import { useTheme } from '../context/ThemeContext'
@@ -152,9 +151,6 @@ const RootLayout = ({ children, activeTab, setActiveTab, onOpenNotifications, un
                     {children}
                 </div>
             </main>
-
-            {/* BottomNav removed as per user request */}
-
             <MobileMenu
                 isOpen={isMobileMenuOpen}
                 onClose={() => setIsMobileMenuOpen(false)}
