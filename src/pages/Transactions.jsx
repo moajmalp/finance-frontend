@@ -17,7 +17,7 @@ import { ListSkeleton } from '../skeletons/ListSkeleton'
 
 const Transactions = () => {
     const isLoading = useMockLoading()
-    const { transactions, deleteTransaction, accounts, categories, undoDelete, currencySymbol } = useTransactions()
+    const { transactions, deleteTransaction, accounts, currencySymbol } = useTransactions()
 
     const [search, setSearch] = useState('')
     const [viewMode, setViewMode] = useState('list') // 'list' or 'calendar'
@@ -152,11 +152,7 @@ const Transactions = () => {
         }
     }
 
-    const filterOptions = [
-        { label: 'All Transactions', value: 'all' },
-        { label: 'Income Only', value: 'INCOME' },
-        { label: 'Expenses Only', value: 'EXPENSE' }
-    ]
+
 
     if (isLoading) return <ListSkeleton />
 

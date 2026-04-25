@@ -4,7 +4,7 @@ import { Sliders, TrendingUp, Zap, Calendar, DollarSign, Wallet } from 'lucide-r
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import { cn } from '../lib/utils'
-import { motion } from 'framer-motion'
+
 import { useTransactions } from '../context/TransactionContext'
 
 const Simulation = () => {

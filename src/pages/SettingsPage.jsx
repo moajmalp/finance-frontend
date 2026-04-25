@@ -28,10 +28,10 @@ const SettingsPage = () => {
     const isLoading = useMockLoading()
     const { categories, addCategory, deleteCategory, budgets, setBudget, isPrivacyMode, setIsPrivacyMode, currency, setCurrency, timezone, setTimezone, currencySymbol, subscriptionKeywords, addSubscriptionKeyword, deleteSubscriptionKeyword, enableBudgetAlerts, setEnableBudgetAlerts, enableEmailBudgetAlerts, setEnableEmailBudgetAlerts } = useTransactions()
     const { 
-        isBiometricEnabled, setIsBiometricEnabled, 
-        isPatternLockEnabled, setIsPatternLockEnabled, 
+        isBiometricEnabled,
+        isPatternLockEnabled,
         isIntruderSnapshotEnabled, toggleIntruderSnapshot,
-        setPIN, verifyPIN, clearPIN, deregisterBiometrics, savedPINHash,
+        verifyPIN, clearPIN, deregisterBiometrics, savedPINHash,
         biometricCredentialId, triggerPINSetup, togglePINLock
     } = useSecurity()
 
@@ -39,7 +39,7 @@ const SettingsPage = () => {
     const [showBiometricModal, setShowBiometricModal] = useState(false)
     const [isVerifyingToChange, setIsVerifyingToChange] = useState(false)
     const [currentPinCheck, setCurrentPinCheck] = useState('')
-    const [pinChangeError, setPinChangeError] = useState('')
+    const [, setPinChangeError] = useState('')
 
     const [activeType, setActiveType] = useState('EXPENSE')
     const [newCategory, setNewCategory] = useState('')

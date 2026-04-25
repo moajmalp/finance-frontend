@@ -6,7 +6,7 @@ import Modal from '../components/ui/Modal'
 import Input from '../components/ui/Input'
 import Dropdown from '../components/ui/Dropdown'
 import { useTransactions } from '../context/TransactionContext'
-import { motion } from 'framer-motion'
+
 import PrivacyValue from '../components/ui/PrivacyValue'
 import { cn } from '../lib/utils'
 import Calendar from '../components/ui/Calendar'
@@ -17,7 +17,7 @@ import { DashboardSkeleton } from '../skeletons/DashboardSkeleton'
 
 const Subscriptions = () => {
     const isLoading = useMockLoading()
-    const { subscriptions, addSubscription, updateSubscription, deleteSubscription, accounts, categories, currencySymbol } = useTransactions()
+    const { subscriptions, addSubscription, updateSubscription, deleteSubscription, accounts, currencySymbol } = useTransactions()
 
     const [isAddModalOpen, setIsAddModalOpen] = useState(false)
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
