@@ -18,6 +18,7 @@ const MobileMenu = ({ isOpen, onClose, activeTab, setActiveTab }) => {
         { id: 'analytics', label: 'Insight', icon: BarChart2 },
         { id: 'reports', label: 'Report', icon: FileText },
         { id: 'settings', label: 'Settings', icon: Settings },
+        ...(user?.role === 'SUPER_ADMIN' ? [{ id: 'admin', label: 'Admin Panel', icon: Users }] : []),
     ]
 
     const handleItemClick = (id) => {
@@ -83,11 +84,11 @@ const MobileMenu = ({ isOpen, onClose, activeTab, setActiveTab }) => {
                         <div className="mt-8 pt-8 border-t border-white/5 space-y-4">
                             <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5">
                                 <div className="h-10 w-10 rounded-xl bg-primary text-white flex items-center justify-center font-black text-xs">
-                                    {user?.name?.charAt(0) || 'U'}
+                                    {user?.username?.charAt(0).toUpperCase() || 'U'}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-xs font-black text-foreground truncate">{user?.name || 'User'}</p>
-                                    <p className="text-[9px] font-black text-primary uppercase tracking-widest mt-1">Active Vault</p>
+                                    <p className="text-xs font-black text-foreground truncate">{user?.username || 'User'}</p>
+                                    <p className="text-[9px] font-black text-primary uppercase tracking-widest mt-1">{user?.role === 'SUPER_ADMIN' ? 'SUPER ADMIN' : 'Active Vault'}</p>
                                 </div>
                             </div>
                             <button

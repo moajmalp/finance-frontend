@@ -8,6 +8,7 @@ export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
+    const [role, setRole] = useState(localStorage.getItem('role'));
     const [token, setToken] = useState(localStorage.getItem('token'));
     const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('token'));
     const [loading, setLoading] = useState(true);
@@ -15,7 +16,9 @@ export const AuthProvider = ({ children }) => {
     const logout = useCallback((options = {}) => {
         const { silent = false } = options;
         localStorage.removeItem('token');
+        localStorage.removeItem('role');
         setToken(null);
+        setRole(null);
         setIsAuthenticated(false);
         setUser(null);
         if (!silent) {
@@ -27,9 +30,10 @@ export const AuthProvider = ({ children }) => {
         try {
             const profileData = await fetchProfile();
             setUser(profileData);
+            setRole(profileData.role);
+            localStorage.setItem('role', profileData.role);
         } catch (error) {
             console.error("Failed to load profile", error);
-            // If token is invalid, logout
             if (error.response?.status === 401) {
                 logout({ silent: true });
             }
@@ -50,25 +54,24 @@ export const AuthProvider = ({ children }) => {
             logout({ silent: true });
         };
 
-        console.log("AuthContext: Adding 'unauthorized' event listener to window.");
         window.addEventListener('unauthorized', handleUnauthorized);
         return () => {
-            console.log("AuthContext: Removing 'unauthorized' event listener from window.");
             window.removeEventListener('unauthorized', handleUnauthorized);
         };
     }, [isAuthenticated, loadProfile, logout]);
 
     const login = async (username, password) => {
-        console.log("AuthContext: Starting login attempt for:", username);
         try {
             const data = await apiLogin(username, password);
-            console.log("AuthContext: Login API response:", data);
             const accessToken = data.access_token;
+            const userRole = data.role;
             if (!accessToken) {
                 throw new Error("No access token received from server");
             }
             localStorage.setItem('token', accessToken);
+            localStorage.setItem('role', userRole);
             setToken(accessToken);
+            setRole(userRole);
             setIsAuthenticated(true);
             toast.success('Successfully logged in');
             return true;
@@ -97,6 +100,7 @@ export const AuthProvider = ({ children }) => {
         try {
             const updatedUser = await apiUpdateProfile(profileData);
             setUser(updatedUser);
+            setRole(updatedUser.role);
             toast.success('Profile updated successfully');
             return true;
         } catch (error) {
@@ -122,6 +126,7 @@ export const AuthProvider = ({ children }) => {
     return (
         <AuthContext.Provider value={{
             user,
+            role,
             token,
             isAuthenticated,
             login,
@@ -130,7 +135,8 @@ export const AuthProvider = ({ children }) => {
             loading,
             updateUserProfile,
             updateUserCredentials,
-            refreshProfile: loadProfile
+            refreshProfile: loadProfile,
+            isSuperAdmin: role === 'SUPER_ADMIN'
         }}>
             {children}
         </AuthContext.Provider>

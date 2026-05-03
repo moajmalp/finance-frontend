@@ -7,7 +7,7 @@ import ConfirmationModal from '../components/ui/ConfirmationModal'
 import haptics from '../lib/haptics'
 
 const Sidebar = ({ activeTab, setActiveTab, onOpenNotifications, unreadNotifications, isCollapsed, setIsCollapsed }) => {
-    const { user, logout } = useTransactions()
+    const { user, role, isSuperAdmin, logout } = useTransactions()
 
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 
@@ -24,6 +24,7 @@ const Sidebar = ({ activeTab, setActiveTab, onOpenNotifications, unreadNotificat
         { id: 'analytics', label: 'Insight', icon: BarChart2 },
         { id: 'reports', label: 'Report', icon: FileText },
         { id: 'settings', label: 'Settings', icon: Settings },
+        ...(isSuperAdmin ? [{ id: 'admin', label: 'Admin Panel', icon: Users }] : []),
     ]
 
 
@@ -45,7 +46,7 @@ const Sidebar = ({ activeTab, setActiveTab, onOpenNotifications, unreadNotificat
                     {!isCollapsed && (
                         <div className="animate-in fade-in slide-in-from-left-2 duration-300">
                             <h1 className="text-xl font-black text-slate-900 dark:text-transparent dark:bg-clip-text dark:bg-linear-to-br dark:from-slate-300 dark:via-white dark:to-slate-400 tracking-tight">FLUX</h1>
-                            <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mt-1 opacity-80">Future Finance</p>
+                            <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mt-1 opacity-80">{isSuperAdmin ? 'SUPER ADMIN' : 'Future Finance'}</p>
                         </div>
                     )}
                 </div>
@@ -105,13 +106,13 @@ const Sidebar = ({ activeTab, setActiveTab, onOpenNotifications, unreadNotificat
                     onClick={() => setActiveTab('profile')}
                 >
                     <div className="h-10 w-10 shrink-0 rounded-2xl bg-primary shadow-lg shadow-primary/20 flex items-center justify-center text-white font-black text-xs uppercase transition-transform group-hover:scale-110">
-                        {user?.name?.charAt(0) || 'U'}
+                        {user?.username?.charAt(0).toUpperCase() || 'U'}
                     </div>
                     {!isCollapsed && (
                         <>
                             <div className="flex-1 min-w-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                <p className="text-sm font-black text-foreground truncate tracking-tight">{user?.name || 'Power User'}</p>
-                                <p className="text-[10px] font-bold text-muted-foreground truncate uppercase tracking-[0.15em]">Admin Tier</p>
+                                <p className="text-sm font-black text-foreground truncate tracking-tight">{user?.username || 'Power User'}</p>
+                                <p className="text-[10px] font-bold text-muted-foreground truncate uppercase tracking-[0.15em]">{role === 'SUPER_ADMIN' ? 'SUPER ADMIN' : 'USER TIER'}</p>
                             </div>
                             <button
                                 onClick={(e) => { e.stopPropagation(); setShowLogoutConfirm(true); }}

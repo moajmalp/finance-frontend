@@ -15,6 +15,7 @@ import Reports from './pages/Reports'
 import Profile from './pages/Profile'
 import Simulation from './pages/Simulation'
 import Notifications from './pages/Notifications'
+import AdminPanel from './pages/AdminPanel'
 import { TransactionProvider, useTransactions } from './context/TransactionContext'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { useTheme } from './context/ThemeContext'
@@ -110,6 +111,8 @@ function AppContent() {
         return <SettingsPage />
       case 'notifications':
         return <Notifications />
+      case 'admin':
+        return <AdminPanel />
       default:
         return <Dashboard />
     }

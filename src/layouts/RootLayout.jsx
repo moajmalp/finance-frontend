@@ -84,11 +84,11 @@ const RootLayout = ({ children, activeTab, setActiveTab, onOpenNotifications, un
                         onClick={() => setActiveTab('profile')}
                     >
                         <div className="h-9 w-9 rounded-xl bg-primary text-white flex items-center justify-center font-black text-xs shadow-glow group-hover:rotate-6 transition-all">
-                            {user?.name?.charAt(0) || 'U'}
+                            {user?.username?.charAt(0).toUpperCase() || 'U'}
                         </div>
                         <div className="hidden xl:block">
-                            <p className="text-xs font-black text-foreground leading-none">{user?.name || 'User'}</p>
-                            <p className="text-[9px] font-black text-primary uppercase tracking-widest mt-1 opacity-70">Personal Plan</p>
+                            <p className="text-xs font-black text-foreground leading-none">{user?.username || 'User'}</p>
+                            <p className="text-[9px] font-black text-primary uppercase tracking-widest mt-1 opacity-70">{user?.role === 'SUPER_ADMIN' ? 'SUPER ADMIN' : 'Personal Plan'}</p>
                         </div>
                     </div>
                 </div>

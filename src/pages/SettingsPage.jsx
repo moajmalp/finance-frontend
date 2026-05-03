@@ -156,7 +156,7 @@ const SettingsPage = () => {
                                 key={type}
                                 onClick={() => setActiveType(type)}
                                 className={cn(
-                                    "flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all capitalize",
+                                    "flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all",
                                     activeType === type
                                         ? "bg-primary text-white shadow-lg shadow-primary/20"
                                         : "text-muted-foreground hover:text-foreground opacity-60 hover:opacity-100"
@@ -223,7 +223,7 @@ const SettingsPage = () => {
                                     <div className="w-10 h-10 rounded-xl bg-card flex items-center justify-center shadow-sm border border-border/50">
                                         <Tag size={18} className="text-primary opacity-60" />
                                     </div>
-                                    <span className="text-sm font-black text-foreground tracking-tight uppercase tracking-widest">{cat}</span>
+                                    <span className="text-sm font-black text-foreground uppercase tracking-widest">{cat}</span>
                                 </div>
                                 <div className="flex items-center gap-3 bg-card/50 p-1 pl-4 rounded-xl border border-border/50">
                                     <span className="text-xs font-black text-primary">{currencySymbol}</span>
@@ -709,13 +709,13 @@ const SettingsPage = () => {
                         </div>
 
                         <div className="grid md:grid-cols-2 gap-6 relative z-10">
-                            <div className="flex items-center justify-between p-6 sm:p-8 rounded-[2rem] bg-card/40 dark:bg-slate-800/20 border border-border/50 hover:bg-card/60 dark:hover:bg-slate-800/40 transition-all group/item shadow-sm">
+                            <div className="flex items-center justify-between p-6 sm:p-8 rounded-4xl bg-card/40 dark:bg-slate-800/20 border border-border/50 hover:bg-card/60 dark:hover:bg-slate-800/40 transition-all group/item shadow-sm">
                                 <div className="flex items-center gap-5">
                                     <div className="h-12 w-12 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center group-hover/item:scale-110 transition-transform">
                                         <Landmark size={24} />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-black text-foreground tracking-tight uppercase tracking-widest leading-none">Default Currency</p>
+                                        <p className="text-sm font-black text-foreground uppercase tracking-widest leading-none">Default Currency</p>
                                         <p className="text-[10px] font-bold text-muted-foreground mt-1.5 opacity-60">System-wide Denomination</p>
                                     </div>
                                 </div>
@@ -736,7 +736,7 @@ const SettingsPage = () => {
                                         <Clock size={24} />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-black text-foreground tracking-tight uppercase tracking-widest leading-none">Access Timezone</p>
+                                        <p className="text-sm font-black text-foreground uppercase tracking-widest leading-none">Access Timezone</p>
                                         <p className="text-[10px] font-bold text-muted-foreground mt-1.5 opacity-60">Temporal Synchronization</p>
                                     </div>
                                 </div>
@@ -767,7 +767,7 @@ const SettingsPage = () => {
                                         onClick={() => { haptics.medium(); handleSaveRegional(); }}
                                         className="h-12 px-10 rounded-xl shadow-xl shadow-primary/20 gap-2 overflow-hidden relative group"
                                     >
-                                        <div className="absolute inset-0 bg-gradient-to-r from-primary to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        <div className="absolute inset-0 bg-linear-to-r from-primary to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity" />
                                         <span className="relative z-10 font-black uppercase tracking-widest text-[10px]">Save Regional Changes</span>
                                     </Button>
                                 </motion.div>
