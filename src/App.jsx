@@ -70,8 +70,12 @@ function AppContent() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [setIsPrivacyMode, toggleTheme])
 
-  // Reset to dashboard only if explicitly requested or on specific auth changes 
-  // (Removing the automatic reset on every 'isAuthenticated' change to allow persistence)
+  // Redirect to dashboard on login
+  useEffect(() => {
+    if (isAuthenticated) {
+      setActiveTab('dashboard')
+    }
+  }, [isAuthenticated])
 
   if (loading) {
     return <div className="min-h-screen bg-background" />
