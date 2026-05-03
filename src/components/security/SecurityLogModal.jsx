@@ -88,17 +88,35 @@ const SecurityLogModal = ({ isOpen, onClose }) => {
                                         animate={{ opacity: 1, scale: 1 }}
                                         className="group bg-white/5 border border-white/5 rounded-3xl overflow-hidden hover:bg-white/10 transition-all flex flex-col"
                                     >
-                                        <div className="aspect-video relative overflow-hidden bg-black">
-                                            <img 
-                                                src={log.snapshot} 
-                                                alt="Intruder Snapshot" 
-                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                                            />
+                                        <div className="aspect-video relative overflow-hidden bg-slate-950 flex items-center justify-center">
+                                            {log.snapshot ? (
+                                                <img 
+                                                    src={log.snapshot} 
+                                                    alt="Intruder Snapshot" 
+                                                    onError={(e) => {
+                                                        e.target.onerror = null; 
+                                                        e.target.src = ""; // Clear src to trigger fallback
+                                                        e.target.className = "hidden";
+                                                        e.target.parentElement.innerHTML = `
+                                                            <div class="flex flex-col items-center gap-2 opacity-20">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-camera-off"><line x1="2" x2="22" y1="2" y2="22"/><path d="M7 7H3a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h14"/><path d="M20.4 14.8c.4-.8.6-1.7.6-2.8V9a2 2 0 0 0-2-2h-3c-.7 0-1.4-.3-1.9-.8l-.5-.5C13 5.2 12.3 5 11.6 5H8.4c-.4 0-.8.1-1.1.3"/><circle cx="12" cy="13" r="3"/></svg>
+                                                                <span class="text-[8px] font-black uppercase tracking-widest">Image Corrupted</span>
+                                                            </div>
+                                                        `;
+                                                    }}
+                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                                />
+                                            ) : (
+                                                <div className="flex flex-col items-center gap-2 opacity-20 text-slate-400">
+                                                    <CameraOff size={40} />
+                                                    <span className="text-[8px] font-black uppercase tracking-widest">No Snapshot Data</span>
+                                                </div>
+                                            )}
                                             <div className="absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                                             
                                             <button
                                                 onClick={() => { haptics.light(); deleteLog(log.id); }}
-                                                className="absolute top-4 right-4 h-10 w-10 rounded-full bg-rose-500/20 text-rose-500 backdrop-blur-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:scale-110"
+                                                className="absolute top-4 right-4 h-10 w-10 rounded-full bg-rose-500/20 text-rose-500 backdrop-blur-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:scale-110 z-10"
                                             >
                                                 <Trash2 size={18} />
                                             </button>
