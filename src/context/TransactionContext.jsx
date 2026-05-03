@@ -84,7 +84,15 @@ export const TransactionProvider = ({ children }) => {
     const currencySymbol = currency === 'USD' ? '$' : '₹'
 
 
-    const { isAuthenticated, user, logout, updateUserCredentials = () => Promise.resolve(false), updateUserProfile = () => Promise.resolve(false) } = useAuth()
+    const { 
+        isAuthenticated, 
+        user, 
+        role,
+        logout, 
+        updateUserCredentials = () => Promise.resolve(false), 
+        updateUserProfile = () => Promise.resolve(false),
+        isSuperAdmin
+    } = useAuth()
 
     const [activityLog, setActivityLog] = useState(() => getSafeStorage(STORAGE_KEYS.LOGS, []))
     const [insights, setInsights] = useState([])
@@ -797,6 +805,9 @@ export const TransactionProvider = ({ children }) => {
             subscriptions,
             debts,
             alerts,
+            user,
+            role,
+            isSuperAdmin,
             ...totals,
             isPrivacyMode,
             setIsPrivacyMode,

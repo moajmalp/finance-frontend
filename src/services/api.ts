@@ -406,6 +406,31 @@ const api = {
     fetchSecurityLogs,
   deleteSecurityLog,
   clearAllSecurityLogs,
+  adminDeleteUser: async (userId: number) => {
+    const response = await apiClient.delete(`/admin/users/${userId}`);
+    return response.data;
+  },
+  // Admin
+  adminFetchUsers: async () => {
+    const response = await apiClient.get('/admin/users');
+    return response.data;
+  },
+  adminCreateUser: async (data: any) => {
+    const response = await apiClient.post('/admin/users', data);
+    return response.data;
+  },
+  adminUpdateUser: async (userId: number, data: any) => {
+    const response = await apiClient.put(`/admin/users/${userId}`, data);
+    return response.data;
+  },
+  adminFetchLogs: async (targetUserId: number) => {
+    const response = await apiClient.get('/admin/logs', { params: { target_user_id: targetUserId } });
+    return response.data;
+  },
+  adminDeleteUser: async (userId: number) => {
+    const response = await apiClient.delete(`/admin/users/${userId}`);
+    return response.data;
+  },
 };
 
 export default api;
