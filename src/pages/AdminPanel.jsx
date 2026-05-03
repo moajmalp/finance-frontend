@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Users, UserPlus, Shield, Activity, Search, Edit2, Trash2, Key, Check, X, ShieldAlert, UserCheck, Eye, EyeOff, UserX, AlertCircle, ChevronDown } from 'lucide-react'
+import { Users, UserPlus, Shield, Activity, Search, Edit2, Trash2, Key, Check, X, ShieldAlert, UserCheck, Eye, EyeOff, UserX, AlertCircle, ChevronDown, Mail } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import api from '../services/api'
 import toast from 'react-hot-toast'
