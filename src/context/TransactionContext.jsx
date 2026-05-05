@@ -68,12 +68,21 @@ export const TransactionProvider = ({ children }) => {
             console.error("Failed to persist timezone change", e)
         }
     }
+    const setSendWelcomeEmail = async (enabled) => {
+        setSendWelcomeEmailState(enabled)
+        try {
+            await api.updateUserConfig({ send_welcome_email: enabled })
+        } catch (e) {
+            console.error("Failed to persist welcome email preference", e)
+        }
+    }
     const [subscriptionKeywords, setSubscriptionKeywords] = useState(DEFAULT_SUB_KEYWORDS)
     const [goals, setGoals] = useState([])
 
     // Budget alert control flags
     const [enableBudgetAlerts, setEnableBudgetAlerts] = useState(true)
     const [enableEmailBudgetAlerts, setEnableEmailBudgetAlerts] = useState(false)
+    const [sendWelcomeEmail, setSendWelcomeEmailState] = useState(true)
 
     // Track which categories have already fired alerts for the current month
     const [budgetAlertState, setBudgetAlertState] = useState({})
@@ -158,6 +167,7 @@ export const TransactionProvider = ({ children }) => {
                     }
                     if (configData.subscription_keywords) setSubscriptionKeywords(configData.subscription_keywords)
                     if (configData.monthly_spending_limits) setBudgets(configData.monthly_spending_limits)
+                    if (configData.send_welcome_email !== undefined) setSendWelcomeEmailState(configData.send_welcome_email)
                 }
             } catch (error) {
                 console.error("Failed to fetch initial data:", error)
@@ -858,6 +868,8 @@ export const TransactionProvider = ({ children }) => {
             setEnableBudgetAlerts,
             enableEmailBudgetAlerts,
             setEnableEmailBudgetAlerts,
+            sendWelcomeEmail,
+            setSendWelcomeEmail,
             logout
         }}>
             {children}

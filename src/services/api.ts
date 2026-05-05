@@ -74,6 +74,7 @@ export interface UserConfigData {
         income: string[];
     };
     subscription_keywords?: string[];
+    send_welcome_email?: boolean;
 }
 
 export interface BudgetAlertEmailPayload {
