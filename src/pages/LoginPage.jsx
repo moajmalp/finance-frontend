@@ -9,21 +9,25 @@ const LoginPage = () => {
     const [formData, setFormData] = useState({ username: '', password: '' })
     const [showPassword, setShowPassword] = useState(false)
     const [isRegisterMode, setIsRegisterMode] = useState(false)
+    const [loading, setLoading] = useState(false)
 
     const handleSubmit = async (e) => {
         e.preventDefault()
-        if (isRegisterMode) {
-            try {
+        setLoading(true)
+        try {
+            if (isRegisterMode) {
                 const created = await register(formData.username, formData.password)
                 if (created) {
                     setIsRegisterMode(false)
                 }
-            } catch {
-                // Toast is already handled in AuthContext.
+            } else {
+                await login(formData.username, formData.password)
             }
-            return
+        } catch (error) {
+            console.error("Auth error:", error)
+        } finally {
+            setLoading(false)
         }
-        await login(formData.username, formData.password)
     }
 
     return (
@@ -116,6 +120,7 @@ const LoginPage = () => {
 
                         <Button
                             type="submit"
+                            loading={loading}
                             className="w-full h-14 bg-primary text-white text-xs font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all relative overflow-hidden group"
                         >
                             <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
