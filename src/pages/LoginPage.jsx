@@ -68,7 +68,7 @@ const LoginPage = () => {
                                     <Mail className="absolute left-0 top-1/2 -translate-y-1/2 text-muted-foreground/50 group-hover:text-primary/60 transition-colors" size={16} />
                                     <input
                                         type="text"
-                                        placeholder="Username or Email"
+                                        placeholder="Username"
                                         className="w-full h-12 pl-8 bg-transparent border-none outline-none text-sm font-bold placeholder:text-muted-foreground/30 text-foreground"
                                         value={formData.username}
                                         onChange={(e) => setFormData({ ...formData, username: e.target.value })}
