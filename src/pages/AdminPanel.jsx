@@ -22,6 +22,12 @@ const AdminPanel = () => {
     const [isEditRoleOpen, setIsEditRoleOpen] = useState(false)
     const [securityAlertsCount, setSecurityAlertsCount] = useState(0)
     
+    // Activity Log State
+    const [showUserLogs, setShowUserLogs] = useState(false)
+    const [userLogs, setUserLogs] = useState([])
+    const [logsLoading, setLogsLoading] = useState(false)
+    const [activeLogsUser, setActiveLogsUser] = useState(null)
+    
     // New User State
     const [newUser, setNewUser] = useState({
         username: '',
@@ -99,6 +105,20 @@ const AdminPanel = () => {
                 }
             }
         })
+    }
+
+    const handleFetchLogs = async (user) => {
+        setLogsLoading(true)
+        setActiveLogsUser(user)
+        setShowUserLogs(true)
+        try {
+            const data = await api.adminFetchLogs(user.id)
+            setUserLogs(data)
+        } catch (error) {
+            toast.error("Failed to retrieve operational logs")
+        } finally {
+            setLogsLoading(false)
+        }
     }
 
     const handleEditUser = async (e) => {
@@ -746,21 +766,108 @@ const AdminPanel = () => {
 
                                 <div className="flex gap-4">
                                     <button 
+                                        onClick={() => { setShowDetailUser(false); handleFetchLogs(detailUserData); }}
+                                        className="flex-1 h-14 bg-primary/10 hover:bg-primary/20 rounded-2xl border border-primary/20 text-xs font-black uppercase tracking-widest text-primary transition-all"
+                                    >
+                                        Operation Log
+                                    </button>
+                                    <button 
                                         onClick={() => { setShowDetailUser(false); setEditUserData(detailUserData); setShowEditUser(true); }}
                                         className="flex-1 h-14 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/10 text-xs font-black uppercase tracking-widest text-white transition-all"
                                     >
                                         Modify Identity
                                     </button>
-                                    <button 
-                                        onClick={() => { setShowDetailUser(false); handleToggleActive(detailUserData); }}
-                                        className={cn(
-                                            "flex-1 h-14 rounded-2xl text-xs font-black uppercase tracking-widest transition-all",
-                                            detailUserData.is_active ? "bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 border border-rose-500/10" : "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 border border-emerald-500/10"
-                                        )}
-                                    >
-                                        {detailUserData.is_active ? 'Lock Access' : 'Unlock Access'}
-                                    </button>
                                 </div>
+                                <button 
+                                    onClick={() => { setShowDetailUser(false); handleToggleActive(detailUserData); }}
+                                    className={cn(
+                                        "w-full h-14 rounded-2xl text-xs font-black uppercase tracking-widest transition-all",
+                                        detailUserData.is_active ? "bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 border border-rose-500/10" : "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 border border-emerald-500/10"
+                                    )}
+                                >
+                                    {detailUserData.is_active ? 'Lock Access' : 'Unlock Access'}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* User Activity Logs Modal */}
+            <AnimatePresence>
+                {showUserLogs && activeLogsUser && (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setShowUserLogs(false)}
+                            className="absolute inset-0 bg-black/80 backdrop-blur-xl"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="glass-card w-full max-w-2xl max-h-[80vh] flex flex-col p-0 relative z-10 border-white/10 shadow-2xl overflow-hidden"
+                        >
+                            <div className="p-6 border-b border-white/10 flex items-center justify-between bg-white/5">
+                                <div className="flex items-center gap-4">
+                                    <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                                        <Activity className="text-primary" size={24} />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-black text-white tracking-tight uppercase">Operational Logs</h3>
+                                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                                            Tracing History for @{activeLogsUser.username}
+                                        </p>
+                                    </div>
+                                </div>
+                                <button 
+                                    onClick={() => setShowUserLogs(false)}
+                                    className="h-10 w-10 hover:bg-white/10 rounded-full flex items-center justify-center text-muted-foreground transition-all"
+                                >
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+                                {logsLoading ? (
+                                    <div className="h-40 flex flex-col items-center justify-center gap-4">
+                                        <div className="h-10 w-10 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                                        <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Synchronizing Logs...</p>
+                                    </div>
+                                ) : userLogs.length > 0 ? (
+                                    userLogs.map((log, index) => (
+                                        <div key={log.id} className="group relative flex gap-6 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-primary/20 transition-all">
+                                            <div className="flex flex-col items-center">
+                                                <div className="h-3 w-3 rounded-full bg-primary/40 ring-4 ring-primary/10 group-hover:bg-primary transition-all" />
+                                                {index !== userLogs.length - 1 && <div className="w-px flex-1 bg-white/10 mt-2" />}
+                                            </div>
+                                            <div className="flex-1 pb-2">
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <span className="text-xs font-black text-white uppercase tracking-wider">{log.action}</span>
+                                                    <span className="text-[10px] font-bold text-muted-foreground">
+                                                        {new Date(log.timestamp).toLocaleString()}
+                                                    </span>
+                                                </div>
+                                                <p className="text-xs text-muted-foreground leading-relaxed">
+                                                    {log.details || "System automated log entry without supplementary data."}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="h-40 flex flex-col items-center justify-center text-center space-y-2 opacity-40">
+                                        <AlertCircle size={32} className="text-muted-foreground" />
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">No Logs Found</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="p-6 bg-white/5 border-t border-white/10">
+                                <p className="text-[9px] font-bold text-muted-foreground/50 uppercase tracking-[0.2em] text-center">
+                                    End of Cryptographic Trace • Security Protocol Alpha-9
+                                </p>
                             </div>
                         </motion.div>
                     </div>
