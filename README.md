@@ -2,6 +2,7 @@
 
 A premium, high-performance personal finance dashboard built with React, Vite, and Tailwind CSS.
 
+
 ## 📁 Project Structure
 
 The codebase follows a modular React architecture:
