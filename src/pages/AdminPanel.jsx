@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Users, UserPlus, Shield, Activity, Search, Edit2, Trash2, Key, Check, X, ShieldAlert, UserCheck, Eye, EyeOff, UserX, AlertCircle, ChevronDown } from 'lucide-react'
+import { Users, UserPlus, Shield, Activity, Search, Edit2, Trash2, Key, Check, X, ShieldAlert, UserCheck, Eye, EyeOff, UserX, AlertCircle, ChevronDown, Mail } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import api from '../services/api'
 import toast from 'react-hot-toast'
@@ -15,10 +15,18 @@ const AdminPanel = () => {
     const [showPassword, setShowPassword] = useState(false)
     const [showEditUser, setShowEditUser] = useState(false)
     const [editUserData, setEditUserData] = useState(null)
+    const [showDetailUser, setShowDetailUser] = useState(false)
+    const [detailUserData, setDetailUserData] = useState(null)
     const [confirmModal, setConfirmModal] = useState({ show: false, title: '', message: '', onConfirm: null, type: 'danger' })
     const [isAddRoleOpen, setIsAddRoleOpen] = useState(false)
     const [isEditRoleOpen, setIsEditRoleOpen] = useState(false)
     const [securityAlertsCount, setSecurityAlertsCount] = useState(0)
+    
+    // Activity Log State
+    const [showUserLogs, setShowUserLogs] = useState(false)
+    const [userLogs, setUserLogs] = useState([])
+    const [logsLoading, setLogsLoading] = useState(false)
+    const [activeLogsUser, setActiveLogsUser] = useState(null)
     
     // New User State
     const [newUser, setNewUser] = useState({
@@ -97,6 +105,20 @@ const AdminPanel = () => {
                 }
             }
         })
+    }
+
+    const handleFetchLogs = async (user) => {
+        setLogsLoading(true)
+        setActiveLogsUser(user)
+        setShowUserLogs(true)
+        try {
+            const data = await api.adminFetchLogs(user.id)
+            setUserLogs(data)
+        } catch (error) {
+            toast.error("Failed to retrieve operational logs")
+        } finally {
+            setLogsLoading(false)
+        }
     }
 
     const handleEditUser = async (e) => {
@@ -218,7 +240,8 @@ const AdminPanel = () => {
                                         animate={{ opacity: 1 }}
                                         exit={{ opacity: 0 }}
                                         key={u.id} 
-                                        className="hover:bg-white/[0.02] transition-colors group"
+                                        className="hover:bg-white/[0.02] transition-colors group cursor-pointer"
+                                        onClick={() => { haptics.medium(); setDetailUserData(u); setShowDetailUser(true); }}
                                     >
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
@@ -252,8 +275,15 @@ const AdminPanel = () => {
                                         <td className="px-6 py-4 text-[11px] font-bold text-muted-foreground tracking-tight">
                                             {new Date(u.joined_date).toLocaleDateString()}
                                         </td>
-                                        <td className="px-6 py-4 text-right">
+                                        <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                                             <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button 
+                                                    onClick={() => { haptics.light(); setDetailUserData(u); setShowDetailUser(true); }}
+                                                    className="p-2 hover:bg-white/10 rounded-xl text-muted-foreground hover:text-white transition-all"
+                                                    title="View Details"
+                                                >
+                                                    <Search size={16} />
+                                                </button>
                                                 <button 
                                                     onClick={() => { haptics.light(); setEditUserData(u); setShowEditUser(true); }}
                                                     className="p-2 hover:bg-white/10 rounded-xl text-muted-foreground hover:text-white transition-all"
@@ -626,6 +656,219 @@ const AdminPanel = () => {
                                     </button>
                                 </div>
                             </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+            {/* User Detail Modal */}
+            <AnimatePresence>
+                {showDetailUser && detailUserData && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setShowDetailUser(false)}
+                            className="absolute inset-0 bg-black/60 backdrop-blur-md"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="glass-card w-full max-w-xl p-0 relative z-10 border-white/10 shadow-2xl overflow-hidden"
+                        >
+                            {/* Profile Header */}
+                            <div className="relative h-32 bg-gradient-to-r from-primary/30 via-indigo-500/20 to-primary/30">
+                                <button 
+                                    onClick={() => setShowDetailUser(false)} 
+                                    className="absolute top-4 right-4 h-10 w-10 bg-black/20 hover:bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-all z-10"
+                                >
+                                    <X size={20} />
+                                </button>
+                                
+                                <div className="absolute -bottom-10 left-8">
+                                    <div className="h-24 w-24 rounded-3xl bg-slate-900 border-4 border-slate-900 shadow-2xl flex items-center justify-center relative overflow-hidden group">
+                                        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-indigo-500/20" />
+                                        <span className="text-4xl font-black text-primary relative z-10">
+                                            {detailUserData.username.charAt(0).toUpperCase()}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="p-8 pt-14 space-y-8">
+                                <div className="flex items-start justify-between">
+                                    <div>
+                                        <h2 className="text-2xl font-black text-white tracking-tight">{detailUserData.full_name || detailUserData.username}</h2>
+                                        <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mt-1">
+                                            @{detailUserData.username} • {detailUserData.role}
+                                        </p>
+                                    </div>
+                                    <div className={cn(
+                                        "px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2",
+                                        detailUserData.is_active ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" : "bg-rose-500/10 text-rose-500 border border-rose-500/20"
+                                    )}>
+                                        <div className={cn("h-2 w-2 rounded-full", detailUserData.is_active ? "bg-emerald-500 animate-pulse" : "bg-rose-500")} />
+                                        {detailUserData.is_active ? 'Identity Active' : 'Identity Locked'}
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-8">
+                                    <div className="space-y-4">
+                                        <div className="space-y-1">
+                                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                                                <Mail size={12} className="text-primary" /> Contact Endpoint
+                                            </p>
+                                            <p className="text-sm font-bold text-white">{detailUserData.email || 'Not Configured'}</p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                                                <Key size={12} className="text-primary" /> Joined Protocol
+                                            </p>
+                                            <p className="text-sm font-bold text-white">{new Date(detailUserData.joined_date).toLocaleDateString(undefined, { dateStyle: 'long' })}</p>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <div className="space-y-1">
+                                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                                                <Shield size={12} className="text-primary" /> Clearance Level
+                                            </p>
+                                            <p className="text-sm font-bold text-white">{detailUserData.role === 'SUPER_ADMIN' ? 'Level 5 (Super Admin)' : 'Level 1 (Standard)'}</p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                                                <Activity size={12} className="text-primary" /> Last Session
+                                            </p>
+                                            <p className="text-sm font-bold text-white italic opacity-50">Unavailable in Current Build</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="p-6 rounded-3xl bg-white/5 border border-white/5 space-y-4">
+                                    <div className="space-y-2">
+                                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Biometric Identity</p>
+                                        <p className="text-xs text-white/70 leading-relaxed font-medium">
+                                            {detailUserData.bio || 'No cryptographic bio signature provided for this identity.'}
+                                        </p>
+                                    </div>
+                                    <div className="h-px bg-white/5" />
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Base of Operations</p>
+                                            <p className="text-xs font-bold text-white mt-1">{detailUserData.location || 'Global/Remote'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Sync Priority</p>
+                                            <p className="text-xs font-bold text-primary mt-1">High Intensity</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-4">
+                                    <button 
+                                        onClick={() => { setShowDetailUser(false); handleFetchLogs(detailUserData); }}
+                                        className="flex-1 h-14 bg-primary/10 hover:bg-primary/20 rounded-2xl border border-primary/20 text-xs font-black uppercase tracking-widest text-primary transition-all"
+                                    >
+                                        Operation Log
+                                    </button>
+                                    <button 
+                                        onClick={() => { setShowDetailUser(false); setEditUserData(detailUserData); setShowEditUser(true); }}
+                                        className="flex-1 h-14 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/10 text-xs font-black uppercase tracking-widest text-white transition-all"
+                                    >
+                                        Modify Identity
+                                    </button>
+                                </div>
+                                <button 
+                                    onClick={() => { setShowDetailUser(false); handleToggleActive(detailUserData); }}
+                                    className={cn(
+                                        "w-full h-14 rounded-2xl text-xs font-black uppercase tracking-widest transition-all",
+                                        detailUserData.is_active ? "bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 border border-rose-500/10" : "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 border border-emerald-500/10"
+                                    )}
+                                >
+                                    {detailUserData.is_active ? 'Lock Access' : 'Unlock Access'}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* User Activity Logs Modal */}
+            <AnimatePresence>
+                {showUserLogs && activeLogsUser && (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setShowUserLogs(false)}
+                            className="absolute inset-0 bg-black/80 backdrop-blur-xl"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="glass-card w-full max-w-2xl max-h-[80vh] flex flex-col p-0 relative z-10 border-white/10 shadow-2xl overflow-hidden"
+                        >
+                            <div className="p-6 border-b border-white/10 flex items-center justify-between bg-white/5">
+                                <div className="flex items-center gap-4">
+                                    <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                                        <Activity className="text-primary" size={24} />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-black text-white tracking-tight uppercase">Operational Logs</h3>
+                                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                                            Tracing History for @{activeLogsUser.username}
+                                        </p>
+                                    </div>
+                                </div>
+                                <button 
+                                    onClick={() => setShowUserLogs(false)}
+                                    className="h-10 w-10 hover:bg-white/10 rounded-full flex items-center justify-center text-muted-foreground transition-all"
+                                >
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+                                {logsLoading ? (
+                                    <div className="h-40 flex flex-col items-center justify-center gap-4">
+                                        <div className="h-10 w-10 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                                        <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Synchronizing Logs...</p>
+                                    </div>
+                                ) : userLogs.length > 0 ? (
+                                    userLogs.map((log, index) => (
+                                        <div key={log.id} className="group relative flex gap-6 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-primary/20 transition-all">
+                                            <div className="flex flex-col items-center">
+                                                <div className="h-3 w-3 rounded-full bg-primary/40 ring-4 ring-primary/10 group-hover:bg-primary transition-all" />
+                                                {index !== userLogs.length - 1 && <div className="w-px flex-1 bg-white/10 mt-2" />}
+                                            </div>
+                                            <div className="flex-1 pb-2">
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <span className="text-xs font-black text-white uppercase tracking-wider">{log.action}</span>
+                                                    <span className="text-[10px] font-bold text-muted-foreground">
+                                                        {new Date(log.timestamp).toLocaleString()}
+                                                    </span>
+                                                </div>
+                                                <p className="text-xs text-muted-foreground leading-relaxed">
+                                                    {log.details || "System automated log entry without supplementary data."}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="h-40 flex flex-col items-center justify-center text-center space-y-2 opacity-40">
+                                        <AlertCircle size={32} className="text-muted-foreground" />
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">No Logs Found</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="p-6 bg-white/5 border-t border-white/10">
+                                <p className="text-[9px] font-bold text-muted-foreground/50 uppercase tracking-[0.2em] text-center">
+                                    End of Cryptographic Trace • Security Protocol Alpha-9
+                                </p>
+                            </div>
                         </motion.div>
                     </div>
                 )}
