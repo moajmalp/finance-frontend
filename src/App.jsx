@@ -161,6 +161,7 @@ function AppContent() {
 import { Toaster } from 'react-hot-toast'
 import { SecurityProvider } from './context/SecurityContext'
 import PatternLockOverlay from './components/security/PatternLockOverlay'
+import VersionCheck from './components/VersionCheck'
 
 function App() {
   return (
@@ -168,6 +169,7 @@ function App() {
       <SecurityProvider>
         <TransactionProvider>
           <AppContent />
+          <VersionCheck />
           <Toaster position="top-right" reverseOrder={false} />
         </TransactionProvider>
       </SecurityProvider>
