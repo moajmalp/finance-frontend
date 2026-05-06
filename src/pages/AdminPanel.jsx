@@ -28,7 +28,6 @@ const AdminPanel = () => {
     const [logsLoading, setLogsLoading] = useState(false)
     const [activeLogsUser, setActiveLogsUser] = useState(null)
     
-    // New User State
     const [newUser, setNewUser] = useState({
         username: '',
         password: '',
@@ -36,6 +35,7 @@ const AdminPanel = () => {
         email: '',
         role: 'USER'
     })
+    const [isCreating, setIsCreating] = useState(false)
 
     const fetchUsers = async () => {
         setLoading(true)
@@ -60,6 +60,7 @@ const AdminPanel = () => {
 
     const handleCreateUser = async (e) => {
         e.preventDefault()
+        setIsCreating(true)
         try {
             await api.adminCreateUser(newUser)
             toast.success('User created successfully')
@@ -68,6 +69,8 @@ const AdminPanel = () => {
             fetchUsers()
         } catch (error) {
             toast.error(error.response?.data?.detail || 'Failed to create user')
+        } finally {
+            setIsCreating(false)
         }
     }
 
@@ -453,10 +456,11 @@ const AdminPanel = () => {
 
                                 <button
                                     type="submit"
-                                    disabled={!newUser.username || !newUser.password || !newUser.full_name || !newUser.email}
-                                    className="w-full bg-primary text-white py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all active:scale-[0.98] mt-4 disabled:opacity-30 disabled:pointer-events-none disabled:scale-100"
+                                    disabled={isCreating || !newUser.username || !newUser.password || !newUser.full_name || !newUser.email}
+                                    className="w-full bg-primary text-white py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all active:scale-[0.98] mt-4 disabled:opacity-30 disabled:pointer-events-none disabled:scale-100 flex items-center justify-center gap-3"
                                 >
-                                    CONFIRM PROVISIONING
+                                    {isCreating && <Activity size={16} className="animate-pulse" />}
+                                    {isCreating ? 'ESTABLISHING PROTOCOL...' : 'CONFIRM PROVISIONING'}
                                 </button>
                             </form>
                         </motion.div>

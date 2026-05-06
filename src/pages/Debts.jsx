@@ -147,61 +147,74 @@ const Debts = () => {
 
                 <div className="grid grid-cols-1 gap-4">
                     <AnimatePresence mode="popLayout">
-                        {debts.filter(d => !d.is_settled).map((debt, i) => (
-                            <motion.div
-                                key={debt.id}
-                                layout
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, scale: 0.95 }}
-                                transition={{ delay: i * 0.05 }}
-                            >
-                                <Card className="p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between border-none shadow-premium rounded-[2.5rem] group transition-all duration-300">
-                                    <div className="flex items-center gap-6">
-                                        <div className={cn(
-                                            "h-16 w-16 rounded-[1.5rem] flex items-center justify-center transition-all group-hover:scale-110",
-                                            debt.type === 'OWED_TO_ME' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'
-                                        )}>
-                                            <Users size={28} />
-                                        </div>
-                                        <div>
-                                            <h4 className="text-xl font-black text-foreground tracking-tight">{debt.person_name}</h4>
-                                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">{debt.note || 'No description provided'}</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center justify-between sm:justify-end gap-3 mt-6 sm:mt-0 pt-6 sm:pt-0 border-t sm:border-t-0 border-border/50">
-                                        <div className="sm:text-right mr-4">
-                                            <h4 className={cn(
-                                                "text-2xl font-black tracking-tight",
-                                                debt.type === 'OWED_TO_ME' ? 'text-emerald-500' : 'text-rose-500'
+                        {debts.filter(d => !d.is_settled).length > 0 ? (
+                            debts.filter(d => !d.is_settled).map((debt, i) => (
+                                <motion.div
+                                    key={debt.id}
+                                    layout
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, scale: 0.95 }}
+                                    transition={{ delay: i * 0.05 }}
+                                >
+                                    <Card className="p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between border-none shadow-premium rounded-[2.5rem] group transition-all duration-300">
+                                        <div className="flex items-center gap-6">
+                                            <div className={cn(
+                                                "h-16 w-16 rounded-[1.5rem] flex items-center justify-center transition-all group-hover:scale-110",
+                                                debt.type === 'OWED_TO_ME' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'
                                             )}>
-                                                {debt.type === 'OWED_TO_ME' ? '+' : '-'}
-                                                <PrivacyValue>{currencySymbol}</PrivacyValue>
-                                                <PrivacyValue>{debt.amount.toLocaleString()}</PrivacyValue>
-                                            </h4>
-                                            <p className="text-[10px] font-bold text-muted-foreground uppercase mt-0.5">{new Date(debt.due_date).toLocaleDateString()}</p>
+                                                <Users size={28} />
+                                            </div>
+                                            <div>
+                                                <h4 className="text-xl font-black text-foreground tracking-tight">{debt.person_name}</h4>
+                                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">{debt.note || 'No description provided'}</p>
+                                            </div>
                                         </div>
-                                        <div className="flex gap-2">
-                                            <button
-                                                onClick={() => handleSettleClick(debt)}
-                                                className="h-12 w-12 rounded-xl bg-card border border-border shadow-sm flex items-center justify-center text-muted-foreground hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all duration-300"
-                                                title="Mark as Settled"
-                                            >
-                                                <CheckCircle2 size={20} />
-                                            </button>
-                                            <button
-                                                onClick={() => handleDelete(debt)}
-                                                className="h-12 w-12 rounded-xl bg-card border border-border shadow-sm flex items-center justify-center text-muted-foreground hover:bg-rose-500 hover:text-white hover:border-rose-500 transition-all duration-300"
-                                                title="Delete Record"
-                                            >
-                                                <Trash2 size={20} />
-                                            </button>
+
+                                        <div className="flex items-center justify-between sm:justify-end gap-3 mt-6 sm:mt-0 pt-6 sm:pt-0 border-t sm:border-t-0 border-border/50">
+                                            <div className="sm:text-right mr-4">
+                                                <h4 className={cn(
+                                                    "text-2xl font-black tracking-tight",
+                                                    debt.type === 'OWED_TO_ME' ? 'text-emerald-500' : 'text-rose-500'
+                                                )}>
+                                                    {debt.type === 'OWED_TO_ME' ? '+' : '-'}
+                                                    <PrivacyValue>{currencySymbol}</PrivacyValue>
+                                                    <PrivacyValue>{debt.amount.toLocaleString()}</PrivacyValue>
+                                                </h4>
+                                                <p className="text-[10px] font-bold text-muted-foreground uppercase mt-0.5">{new Date(debt.due_date).toLocaleDateString()}</p>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => handleSettleClick(debt)}
+                                                    className="h-12 w-12 rounded-xl bg-card border border-border shadow-sm flex items-center justify-center text-muted-foreground hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all duration-300"
+                                                    title="Mark as Settled"
+                                                >
+                                                    <CheckCircle2 size={20} />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDelete(debt)}
+                                                    className="h-12 w-12 rounded-xl bg-card border border-border shadow-sm flex items-center justify-center text-muted-foreground hover:bg-rose-500 hover:text-white hover:border-rose-500 transition-all duration-300"
+                                                    title="Delete Record"
+                                                >
+                                                    <Trash2 size={20} />
+                                                </button>
+                                            </div>
                                         </div>
-                                    </div>
-                                </Card>
+                                    </Card>
+                                </motion.div>
+                            ))
+                        ) : (
+                            <motion.div 
+                                initial={{ opacity: 0 }} 
+                                animate={{ opacity: 1 }}
+                                className="border-2 border-dashed border-border/40 rounded-[2.5rem] p-12 flex flex-col items-center justify-center text-center bg-card/10"
+                            >
+                                <div className="h-14 w-14 rounded-2xl bg-muted/40 flex items-center justify-center text-muted-foreground/60 mb-4">
+                                    <AlertCircle size={28} />
+                                </div>
+                                <p className="text-xs font-black text-muted-foreground/60 uppercase tracking-widest">No pending reconciliations</p>
                             </motion.div>
-                        ))}
+                        )}
                     </AnimatePresence>
                 </div>
             </div>
@@ -209,28 +222,38 @@ const Debts = () => {
             {/* Recently Settled */}
             <div className="space-y-4 pt-10">
                 <h3 className="text-lg font-black text-muted-foreground tracking-tight px-2">Recently Settled</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {debts.filter(d => d.is_settled).slice(0, 6).map((debt, i) => (
-                        <Card key={debt.id} className="p-6 border-none shadow-premium rounded-[2rem] opacity-60 grayscale hover:grayscale-0 hover:opacity-100 transition-all">
-                            <div className="flex items-center justify-between mb-4">
-                                <h5 className="font-black text-foreground text-sm tracking-tight">{debt.person_name}</h5>
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={() => handleDelete(debt)}
-                                        className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-rose-500 transition-colors"
-                                    >
-                                        <Trash2 size={14} />
-                                    </button>
-                                    <CheckCircle2 size={16} className="text-emerald-500" />
+                <div className={cn(
+                    "grid grid-cols-1 gap-4",
+                    debts.filter(d => d.is_settled).length > 0 ? "sm:grid-cols-2 lg:grid-cols-3" : ""
+                )}>
+                    {debts.filter(d => d.is_settled).length > 0 ? (
+                        debts.filter(d => d.is_settled).slice(0, 6).map((debt, i) => (
+                            <Card key={debt.id} className="p-6 border-none shadow-premium rounded-[2rem] opacity-60 grayscale hover:grayscale-0 hover:opacity-100 transition-all">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h5 className="font-black text-foreground text-sm tracking-tight">{debt.person_name}</h5>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => handleDelete(debt)}
+                                            className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-rose-500 transition-colors"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                        <CheckCircle2 size={16} className="text-emerald-500" />
+                                    </div>
                                 </div>
-                            </div>
-                            <p className="text-lg font-black text-foreground mb-1">
-                                <PrivacyValue>{currencySymbol}</PrivacyValue>
-                                <PrivacyValue>{debt.amount.toLocaleString()}</PrivacyValue>
-                            </p>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase">{debt.type === 'OWED_TO_ME' ? 'Received' : 'Paid'}</p>
-                        </Card>
-                    ))}
+                                <p className="text-lg font-black text-foreground mb-1">
+                                    <PrivacyValue>{currencySymbol}</PrivacyValue>
+                                    <PrivacyValue>{debt.amount.toLocaleString()}</PrivacyValue>
+                                </p>
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase">{debt.type === 'OWED_TO_ME' ? 'Received' : 'Paid'}</p>
+                            </Card>
+                        ))
+                    ) : (
+                        <div className="col-span-full border-2 border-dashed border-border/30 rounded-[2rem] p-10 flex flex-col items-center justify-center text-center bg-card/5">
+                            <History size={24} className="text-muted-foreground/40 mb-3" />
+                            <p className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest">No settled history</p>
+                        </div>
+                    )}
                 </div>
             </div>
 
