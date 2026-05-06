@@ -61,21 +61,26 @@ const Subscriptions = () => {
             message: `Do you want to activate the "${newSub.name}" subscription at ${currencySymbol}${newSub.amount}/${newSub.frequency}?`,
             type: 'primary',
             onConfirm: async () => {
-                await addSubscription({
-                    ...newSub,
-                    amount: parseFloat(newSub.amount)
-                })
-                setIsAddModalOpen(false)
-                setIsConfirmModalOpen(false)
-                setNewSub({
-                    name: '',
-                    amount: '',
-                    frequency: 'MONTHLY',
-                    category: 'Subscriptions',
-                    accountId: accounts[0]?.id || '',
-                    nextBilling: new Date().toISOString().split('T')[0]
-                })
-                toast.success('Subscription activated')
+                try {
+                    await addSubscription({
+                        ...newSub,
+                        amount: parseFloat(newSub.amount)
+                    })
+                    setIsAddModalOpen(false)
+                    setIsConfirmModalOpen(false)
+                    setNewSub({
+                        name: '',
+                        amount: '',
+                        frequency: 'MONTHLY',
+                        category: 'Subscriptions',
+                        accountId: accounts[0]?.id || '',
+                        nextBilling: new Date().toISOString().split('T')[0]
+                    })
+                    toast.success('Subscription activated')
+                } catch (error) {
+                    // Error is handled in context toast
+                    console.error("Add sub error:", error)
+                }
             }
         })
         setIsConfirmModalOpen(true)

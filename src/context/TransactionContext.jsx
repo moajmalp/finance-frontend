@@ -541,14 +541,19 @@ export const TransactionProvider = ({ children }) => {
 
     const addSubscription = async (sub) => {
         try {
+            const accId = parseInt(sub.accountId || sub.account_id)
+            if (isNaN(accId)) {
+                throw new Error("A valid Vault must be selected to charge the subscription.")
+            }
+
             const payload = {
                 name: sub.name,
                 amount: parseFloat(sub.amount),
                 frequency: sub.frequency,
-                category: sub.category,
-                account_id: sub.accountId || sub.account_id,
+                category: sub.category || 'Subscriptions',
+                account_id: accId,
                 next_billing: sub.nextBilling || sub.next_billing,
-                auto_renewal: sub.autoRenewal || true,
+                auto_renewal: sub.autoRenewal ?? true,
                 is_active: sub.active !== undefined ? sub.active : true
             }
             const newSub = await api.createSubscription(payload)
@@ -556,6 +561,8 @@ export const TransactionProvider = ({ children }) => {
             logActivity('Subscription Added', `${newSub.name}: ${currencySymbol}${newSub.amount}/${newSub.frequency}`)
         } catch (e) {
             console.error("Failed to add subscription", e)
+            toast.error(`Subscription failed: ${e.response?.data?.detail || 'Verify all fields'}`)
+            throw e
         }
     }
 
