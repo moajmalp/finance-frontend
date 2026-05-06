@@ -444,35 +444,9 @@ const SettingsPage = () => {
                             </button>
                         </div>
 
-                        {isSuperAdmin && (
-                            <div className="flex items-center justify-between p-6 sm:p-8 rounded-4xl bg-card/40 dark:bg-slate-800/20 border border-border/50 hover:bg-card/60 dark:hover:bg-slate-800/40 transition-all group/item shadow-sm">
-                                <div className="flex items-center gap-5">
-                                    <div className="h-12 w-12 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center group-hover/item:scale-110 transition-transform">
-                                        <Bell size={24} />
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-black text-foreground tracking-tight">Welcome Protocol</p>
-                                        <p className="text-[10px] font-bold text-muted-foreground mt-1.5 opacity-60">Dispatch automated credentials to new users</p>
-                                    </div>
-                                </div>
-                                <button
-                                    onClick={() => { haptics.light(); setSendWelcomeEmail(!sendWelcomeEmail); }}
-                                    className={cn(
-                                        "relative flex h-10 w-20 items-center rounded-full p-1 transition-colors focus:outline-none",
-                                        sendWelcomeEmail ? "bg-primary" : "bg-muted"
-                                    )}
-                                >
-                                    <motion.div
-                                        layout
-                                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                                        className="h-8 w-8 rounded-full bg-white shadow-sm"
-                                        style={{ x: sendWelcomeEmail ? 40 : 0 }}
-                                    />
-                                </button>
-                            </div>
-                        )}
-                    </Card>
-                </div>
+                    </div>
+                </Card>
+            </div>
 
 
                     {/* Privacy & Security Controls */}
@@ -625,6 +599,39 @@ const SettingsPage = () => {
                                     </motion.div>
                                 )}
                             </AnimatePresence>
+
+                            {isSuperAdmin && (
+                                <div className="flex flex-col gap-4 p-6 rounded-4xl bg-card/40 dark:bg-slate-800/20 border border-border/50 hover:bg-card/60 dark:hover:bg-slate-800/40 transition-all group/item shadow-sm">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-5">
+                                            <div className="h-12 w-12 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center group-hover/item:scale-110 transition-transform">
+                                                <Bell size={24} />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-black text-foreground tracking-tight">Welcome Protocol</p>
+                                                <p className="text-[10px] font-bold text-muted-foreground mt-1.5 opacity-60">Automated Mail</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => { haptics.light(); setSendWelcomeEmail(!sendWelcomeEmail); }}
+                                            className={cn(
+                                                "relative flex h-8 w-14 items-center rounded-full p-1 transition-colors focus:outline-none",
+                                                sendWelcomeEmail ? "bg-primary" : "bg-muted"
+                                            )}
+                                        >
+                                            <motion.div
+                                                layout
+                                                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                                                className="h-6 w-6 rounded-full bg-white shadow-sm"
+                                                style={{ x: sendWelcomeEmail ? 24 : 0 }}
+                                            />
+                                        </button>
+                                    </div>
+                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest pt-2 border-t border-white/5">
+                                        Identity Provisioning Mailer
+                                    </p>
+                                </div>
+                            )}
 
                             {/* Log Viewer Card/Button (Unified width) */}
                             {isIntruderSnapshotEnabled && (
@@ -810,18 +817,18 @@ const SettingsPage = () => {
                     </div>
 
 
-                    <div className="pt-10 mt-2 border-t border-border/50 flex flex-col sm:flex-row justify-between items-center gap-6 relative z-10">
-                        <div className="flex items-center gap-4 w-full sm:w-auto">
-                            <Button onClick={handleExportLedgerCsv} variant="ghost" className="h-12 px-6 gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-xl w-full sm:w-auto">
-                                <Download size={18} />
-                                Export Ledger (Excel)
-                            </Button>
-                        </div>
-                        <div className="flex items-center gap-2 group/version">
-                            <div className="h-2 w-2 rounded-full bg-emerald-theme animate-pulse" />
-                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] opacity-40 group-hover:opacity-80 transition-opacity">AJ Finance Core v4.2.0</p>
-                        </div>
+                <div className="pt-10 mt-2 border-t border-border/50 flex flex-col sm:flex-row justify-between items-center gap-6 relative z-10">
+                    <div className="flex items-center gap-4 w-full sm:w-auto">
+                        <Button onClick={handleExportLedgerCsv} variant="ghost" className="h-12 px-6 gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-xl w-full sm:w-auto">
+                            <Download size={18} />
+                            Export Ledger (Excel)
+                        </Button>
                     </div>
+                    <div className="flex items-center gap-2 group/version">
+                        <div className="h-2 w-2 rounded-full bg-emerald-theme animate-pulse" />
+                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] opacity-40 group-hover:opacity-80 transition-opacity">AJ Finance Core v4.2.0</p>
+                    </div>
+                </div>
             <ConfirmationModal
                 isOpen={isConfirmModalOpen}
                 onClose={() => setIsConfirmModalOpen(false)}

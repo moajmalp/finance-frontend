@@ -221,7 +221,7 @@ const Transactions = () => {
                         className="overflow-hidden"
                     >
                         <Card className="border-none shadow-premium bg-muted/30 mb-8 p-6">
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Flow Type</label>
                                     <Dropdown
@@ -247,7 +247,7 @@ const Transactions = () => {
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Date Range</label>
-                                    <div className="flex gap-2">
+                                    <div className="grid grid-cols-2 gap-2">
                                         <Calendar
                                             value={filters.dateStart}
                                             onChange={(val) => setFilters({ ...filters, dateStart: val })}
@@ -262,7 +262,7 @@ const Transactions = () => {
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Amount Range ({currencySymbol})</label>
-                                    <div className="flex gap-2">
+                                    <div className="grid grid-cols-2 gap-2">
                                         <input
                                             type="number"
                                             placeholder="Min"
