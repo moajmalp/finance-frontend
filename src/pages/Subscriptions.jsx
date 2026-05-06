@@ -170,55 +170,65 @@ const Subscriptions = () => {
 
             {/* Subscriptions Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {subscriptions.map((sub, i) => (
-                    <motion.div
-                        key={sub.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.05 }}
-                    >
-                        <Card className={cn(
-                            "p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between border-none shadow-premium rounded-[2.5rem] group hover:-translate-y-1 transition-all duration-300 gap-6",
-                            !sub.is_active && "opacity-60 grayscale-[0.2]"
-                        )}>
-                            <div className="flex items-center gap-6">
-                                <div className="h-16 w-16 rounded-[1.5rem] bg-muted/50 flex items-center justify-center text-primary group-hover:scale-110 transition-transform shrink-0">
-                                    <CreditCard size={28} />
-                                </div>
-                                <div>
-                                    <h4 className="text-xl font-black text-foreground tracking-tight">{sub.name}</h4>
-                                    <div className="flex flex-wrap items-center gap-3 mt-1">
-                                        <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{sub.frequency}</span>
-                                        <div className="h-1 w-1 rounded-full bg-border" />
-                                        <span className="text-[10px] font-black text-primary uppercase tracking-widest">{sub.category}</span>
+                {subscriptions.length > 0 ? (
+                    subscriptions.map((sub, i) => (
+                        <motion.div
+                            key={sub.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: i * 0.05 }}
+                        >
+                            <Card className={cn(
+                                "p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between border-none shadow-premium rounded-[2.5rem] group hover:-translate-y-1 transition-all duration-300 gap-6",
+                                !sub.is_active && "opacity-60 grayscale-[0.2]"
+                            )}>
+                                <div className="flex items-center gap-6">
+                                    <div className="h-16 w-16 rounded-[1.5rem] bg-muted/50 flex items-center justify-center text-primary group-hover:scale-110 transition-transform shrink-0">
+                                        <CreditCard size={28} />
+                                    </div>
+                                    <div>
+                                        <h4 className="text-xl font-black text-foreground tracking-tight">{sub.name}</h4>
+                                        <div className="flex flex-wrap items-center gap-3 mt-1">
+                                            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{sub.frequency}</span>
+                                            <div className="h-1 w-1 rounded-full bg-border" />
+                                            <span className="text-[10px] font-black text-primary uppercase tracking-widest">{sub.category}</span>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div className="flex flex-col items-end justify-center">
-                                <h4 className="text-2xl font-black text-foreground tracking-tight">
-                                    <PrivacyValue>{currencySymbol}</PrivacyValue>
-                                    <PrivacyValue>{sub.amount.toLocaleString()}</PrivacyValue>
-                                </h4>
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase mt-0.5">Due {new Date(sub.next_billing).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</p>
-                            </div>
-                            <div className="flex items-center gap-4 pt-6 sm:pt-0 border-t sm:border-t-0 border-border/50">
-                                <button
-                                    onClick={() => handleToggleActive(sub)}
-                                    className="h-10 w-10 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl transition-all active:scale-90"
-                                    title={sub.is_active ? 'Pause subscription' : 'Resume subscription'}
-                                >
-                                    {sub.is_active ? <Pause size={18} /> : <Play size={18} />}
-                                </button>
-                                <button
-                                    onClick={() => handleDelete(sub)}
-                                    className="h-10 w-10 flex items-center justify-center text-muted-foreground hover:text-rose-theme hover:bg-rose-theme-bg rounded-xl transition-all active:scale-90"
-                                >
-                                    <Trash2 size={18} />
-                                </button>
-                            </div>
-                        </Card>
-                    </motion.div>
-                ))}
+                                <div className="flex flex-col items-end justify-center">
+                                    <h4 className="text-2xl font-black text-foreground tracking-tight">
+                                        <PrivacyValue>{currencySymbol}</PrivacyValue>
+                                        <PrivacyValue>{sub.amount.toLocaleString()}</PrivacyValue>
+                                    </h4>
+                                    <p className="text-[10px] font-bold text-muted-foreground uppercase mt-0.5">Due {new Date(sub.next_billing).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</p>
+                                </div>
+                                <div className="flex items-center gap-4 pt-6 sm:pt-0 border-t sm:border-t-0 border-border/50">
+                                    <button
+                                        onClick={() => handleToggleActive(sub)}
+                                        className="h-10 w-10 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl transition-all active:scale-90"
+                                        title={sub.is_active ? 'Pause subscription' : 'Resume subscription'}
+                                    >
+                                        {sub.is_active ? <Pause size={18} /> : <Play size={18} />}
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(sub)}
+                                        className="h-10 w-10 flex items-center justify-center text-muted-foreground hover:text-rose-theme hover:bg-rose-theme-bg rounded-xl transition-all active:scale-90"
+                                    >
+                                        <Trash2 size={18} />
+                                    </button>
+                                </div>
+                            </Card>
+                        </motion.div>
+                    ))
+                ) : (
+                    <div className="col-span-full border-2 border-dashed border-border/40 rounded-[2.5rem] p-20 flex flex-col items-center justify-center text-center bg-card/10">
+                        <div className="h-16 w-16 rounded-[1.5rem] bg-muted/40 flex items-center justify-center text-muted-foreground/60 mb-6">
+                            <Repeat size={32} />
+                        </div>
+                        <h4 className="text-xl font-black text-foreground/80 tracking-tight mb-2">No active subscriptions</h4>
+                        <p className="text-sm font-medium text-muted-foreground/60 max-w-[280px]">Your automated recurring operations will appear here once activated.</p>
+                    </div>
+                )}
             </div>
 
             <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="Add Subscribed Operation">
