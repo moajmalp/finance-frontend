@@ -114,7 +114,8 @@ const apiClient = axios.create({
 
 // Interceptor to add token to requests
 apiClient.interceptors.request.use((config) => {
-    const token = localStorage.getItem('token');
+    // Check for impersonation token first, then fallback to normal token
+    const token = sessionStorage.getItem('impersonateToken') || localStorage.getItem('token');
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
@@ -134,7 +135,13 @@ apiClient.interceptors.response.use(
         console.log("apiClient: Response error interceptor caught:", status, requestUrl);
         if (status === 401 && !isAuthAttempt) {
             console.warn("apiClient: 401 Unauthorized detected. Clearing token and dispatching 'unauthorized' event.");
-            localStorage.removeItem('token');
+            // Clear appropriate token storage
+            if (sessionStorage.getItem('impersonateToken')) {
+                sessionStorage.removeItem('impersonateToken');
+                sessionStorage.removeItem('isImpersonating');
+            } else {
+                localStorage.removeItem('token');
+            }
             // Dispatch custom event for AuthContext to pick up
             window.dispatchEvent(new Event('unauthorized'));
         } else if (status >= 500) {
@@ -430,6 +437,10 @@ const api = {
   },
   adminDeleteUser: async (userId: number) => {
     const response = await apiClient.delete(`/admin/users/${userId}`);
+    return response.data;
+  },
+  adminImpersonateUser: async (userId: number) => {
+    const response = await apiClient.post(`/admin/impersonate/${userId}`);
     return response.data;
   },
 };

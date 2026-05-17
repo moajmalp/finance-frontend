@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import RootLayout from './layouts/RootLayout'
 import Dashboard from './pages/Dashboard'
 import AddTransaction from './pages/AddTransaction'
@@ -20,11 +20,12 @@ import { TransactionProvider, useTransactions } from './context/TransactionConte
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { useTheme } from './context/ThemeContext'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Home, List, PlusCircle, Settings, Wallet, Repeat, Target, History, BarChart2, FileText, Users, TrendingUp } from 'lucide-react'
+import { Home, List, PlusCircle, Settings, Wallet, Repeat, Target, History, BarChart2, FileText, Users, TrendingUp, ShieldAlert } from 'lucide-react'
 
 function AppContent() {
+  const isInitialMount = useRef(true)
   const { isPrivacyMode, setIsPrivacyMode, alerts } = useTransactions()
-  const { isAuthenticated, loading } = useAuth()
+  const { isAuthenticated, loading, isImpersonating, logout, user } = useAuth()
   const { toggleTheme } = useTheme()
 
   const [activeTab, setActiveTab] = useState(() => {
@@ -70,8 +71,12 @@ function AppContent() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [setIsPrivacyMode, toggleTheme])
 
-  // Redirect to dashboard on login
+  // Redirect to dashboard on new login, but preserve tab on refresh
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
     if (isAuthenticated) {
       setActiveTab('dashboard')
     }
@@ -135,26 +140,59 @@ function AppContent() {
   ]
 
   return (
-    <RootLayout
-      activeTab={activeTab}
-      setActiveTab={setActiveTab}
-      onOpenNotifications={() => setActiveTab('notifications')}
-      unreadNotifications={alerts.filter(a => !a.read).length}
-      navItems={navItems}
-    >
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.2 }}
-        >
-          {renderContent()}
-        </motion.div>
+    <>
+      {/* Impersonation Mode Banner */}
+      <AnimatePresence>
+        {isImpersonating && (
+          <motion.div
+            initial={{ y: -50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -50, opacity: 0 }}
+            className="fixed top-0 left-0 right-0 z-50 bg-rose-500 text-white px-4 py-2 flex items-center justify-between shadow-lg"
+          >
+            <div className="flex items-center gap-2">
+              <ShieldAlert size={18} className="animate-pulse" />
+              <span className="text-sm font-semibold tracking-wide">
+                IMPERSONATE MODE
+              </span>
+              <span className="text-sm opacity-90 hidden sm:inline">
+                — You are currently viewing the dashboard of {user?.username}.
+              </span>
+            </div>
+            <button
+              onClick={() => logout()}
+              className="px-3 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-bold transition-all"
+            >
+              EXIT IMPERSONATION
+            </button>
+          </motion.div>
+        )}
       </AnimatePresence>
-      <PatternLockOverlay />
-    </RootLayout>
+
+      <div className="h-screen w-full">
+        <RootLayout
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          onOpenNotifications={() => setActiveTab('notifications')}
+          unreadNotifications={alerts.filter(a => !a.read).length}
+          navItems={navItems}
+          isImpersonating={isImpersonating}
+        >
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              {renderContent()}
+            </motion.div>
+          </AnimatePresence>
+          <PatternLockOverlay />
+        </RootLayout>
+      </div>
+    </>
   )
 }
 
