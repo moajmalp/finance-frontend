@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Users, UserPlus, Shield, Activity, Search, Edit2, Trash2, Key, Check, X, ShieldAlert, UserCheck, Eye, EyeOff, UserX, AlertCircle, ChevronDown, Mail } from 'lucide-react'
+import { Users, UserPlus, Shield, Activity, Search, Edit2, Trash2, Key, Check, X, ShieldAlert, UserCheck, Eye, EyeOff, UserX, AlertCircle, ChevronDown, Mail, ExternalLink } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import api from '../services/api'
 import toast from 'react-hot-toast'
@@ -90,6 +90,18 @@ const AdminPanel = () => {
                 }
             }
         })
+    }
+
+    const handleImpersonate = async (userId) => {
+        haptics.light()
+        try {
+            const response = await api.adminImpersonateUser(userId)
+            const token = response.access_token
+            window.open(`/?impersonate_token=${token}`, '_blank')
+        } catch (error) {
+            console.error('Impersonation failed:', error)
+            toast.error(error.response?.data?.detail || 'Failed to initialize impersonation session')
+        }
     }
 
     const handleToggleActive = async (user) => {
@@ -281,35 +293,43 @@ const AdminPanel = () => {
                                         <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                                             <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <button 
-                                                    onClick={() => { haptics.light(); setDetailUserData(u); setShowDetailUser(true); }}
-                                                    className="p-2 hover:bg-white/10 rounded-xl text-muted-foreground hover:text-white transition-all"
-                                                    title="View Details"
+                                                    onClick={() => handleImpersonate(u.id)}
+                                                    className="group/btn relative p-2 hover:bg-emerald-500/10 rounded-xl text-muted-foreground hover:text-emerald-400 transition-all"
                                                 >
-                                                    <Search size={16} />
+                                                    <ExternalLink size={16} />
+                                                    <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 border border-white/10 text-gray-200 text-[10px] font-medium rounded opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                                        Impersonate Dashboard
+                                                    </span>
                                                 </button>
                                                 <button 
                                                     onClick={() => { haptics.light(); setEditUserData(u); setShowEditUser(true); }}
-                                                    className="p-2 hover:bg-white/10 rounded-xl text-muted-foreground hover:text-white transition-all"
-                                                    title="Edit Identity"
+                                                    className="group/btn relative p-2 hover:bg-white/10 rounded-xl text-muted-foreground hover:text-white transition-all"
                                                 >
                                                     <Edit2 size={16} />
+                                                    <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 border border-white/10 text-gray-200 text-[10px] font-medium rounded opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                                        Edit Identity
+                                                    </span>
                                                 </button>
                                                 <button 
                                                     onClick={() => handleToggleActive(u)}
                                                     className={cn(
-                                                        "p-2 rounded-xl transition-all",
+                                                        "group/btn relative p-2 rounded-xl transition-all",
                                                         u.is_active ? "hover:bg-amber-500/10 text-muted-foreground hover:text-amber-500" : "hover:bg-emerald-500/10 text-emerald-500"
                                                     )}
-                                                    title={u.is_active ? "Deactivate Identity" : "Reactivate Identity"}
                                                 >
                                                     {u.is_active ? <UserX size={16} /> : <UserCheck size={16} />}
+                                                    <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 border border-white/10 text-gray-200 text-[10px] font-medium rounded opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                                        {u.is_active ? "Deactivate" : "Reactivate"}
+                                                    </span>
                                                 </button>
                                                 <button 
                                                     onClick={() => handleDeleteUser(u.id, u.username)}
-                                                    className="p-2 hover:bg-rose-500/10 rounded-xl text-muted-foreground hover:text-rose-500 transition-all"
-                                                    title="Purge Identity"
+                                                    className="group/btn relative p-2 hover:bg-rose-500/10 rounded-xl text-muted-foreground hover:text-rose-500 transition-all"
                                                 >
                                                     <Trash2 size={16} />
+                                                    <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 border border-white/10 text-gray-200 text-[10px] font-medium rounded opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                                        Purge
+                                                    </span>
                                                 </button>
                                             </div>
                                         </td>

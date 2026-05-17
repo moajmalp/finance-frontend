@@ -6,7 +6,7 @@ import { useTheme } from '../context/ThemeContext'
 import { Bell, Sun, Moon, Eye, EyeOff, Plus, Menu } from 'lucide-react'
 import { cn } from '../lib/utils'
 
-const RootLayout = ({ children, activeTab, setActiveTab, onOpenNotifications, unreadNotifications }) => {
+const RootLayout = ({ children, activeTab, setActiveTab, onOpenNotifications, unreadNotifications, isImpersonating }) => {
     const { user, isPrivacyMode, setIsPrivacyMode } = useTransactions()
     const { theme, toggleTheme } = useTheme()
     const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false)
@@ -32,8 +32,9 @@ const RootLayout = ({ children, activeTab, setActiveTab, onOpenNotifications, un
 
             {/* Desktop Top Bar */}
             <header className={cn(
-                "fixed top-0 right-0 h-20 glass border-b border-border/50 z-30 hidden lg:flex items-center justify-between px-12 transition-all duration-500",
-                isSidebarCollapsed ? "left-24" : "left-64"
+                "fixed right-0 h-20 glass border-b border-border/50 z-30 hidden lg:flex items-center justify-between px-12 transition-all duration-500",
+                isSidebarCollapsed ? "left-24" : "left-64",
+                isImpersonating ? "top-[40px]" : "top-0"
             )}>
                 <div className="flex items-center gap-4">
                     <h1 className="text-xl font-black text-slate-900 dark:text-transparent dark:bg-clip-text dark:bg-linear-to-br dark:from-slate-300 dark:via-white dark:to-slate-400 tracking-tight capitalize">{activeTab.replace('_', ' ')}</h1>
@@ -97,7 +98,10 @@ const RootLayout = ({ children, activeTab, setActiveTab, onOpenNotifications, un
 
             <main className="mx-auto max-w-7xl min-h-screen">
                 {/* Mobile App Header */}
-                <header className="fixed top-0 left-0 right-0 h-16 glass border-b border-border/50 z-40 flex lg:hidden items-center justify-between px-6">
+                <header className={cn(
+                    "fixed left-0 right-0 h-16 glass border-b border-border/50 z-40 flex lg:hidden items-center justify-between px-6 transition-all duration-500",
+                    isImpersonating ? "top-[40px]" : "top-0"
+                )}>
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => setIsMobileMenuOpen(true)}
@@ -147,7 +151,10 @@ const RootLayout = ({ children, activeTab, setActiveTab, onOpenNotifications, un
                 </header>
 
 
-                <div className="pt-20 pb-10 px-4 lg:p-12 lg:pt-32 max-w-6xl mx-auto">
+                <div className={cn(
+                    "pb-10 px-4 lg:p-12 max-w-6xl mx-auto transition-all duration-500",
+                    isImpersonating ? "pt-[120px] lg:pt-[168px]" : "pt-20 lg:pt-32"
+                )}>
                     {children}
                 </div>
             </main>

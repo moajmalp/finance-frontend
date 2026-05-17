@@ -7,14 +7,41 @@ const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
+    // Intercept impersonation token from URL before state initialization
+    let urlToken = null;
+    if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        urlToken = params.get('impersonate_token');
+        if (urlToken) {
+            sessionStorage.setItem('impersonateToken', urlToken);
+            sessionStorage.setItem('isImpersonating', 'true');
+            // Immediately clean URL for security
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    }
+
+    const isImpersonatingSession = sessionStorage.getItem('isImpersonating') === 'true';
+    const initialToken = urlToken || sessionStorage.getItem('impersonateToken') || localStorage.getItem('token');
+    const initialRole = sessionStorage.getItem('impersonateRole') || localStorage.getItem('role');
+
     const [user, setUser] = useState(null);
-    const [role, setRole] = useState(localStorage.getItem('role'));
-    const [token, setToken] = useState(localStorage.getItem('token'));
-    const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('token'));
+    const [role, setRole] = useState(initialRole);
+    const [token, setToken] = useState(initialToken);
+    const [isAuthenticated, setIsAuthenticated] = useState(!!initialToken);
+    const [isImpersonating, setIsImpersonating] = useState(isImpersonatingSession);
     const [loading, setLoading] = useState(true);
 
     const logout = useCallback((options = {}) => {
         const { silent = false } = options;
+        if (sessionStorage.getItem('isImpersonating') === 'true') {
+            sessionStorage.removeItem('impersonateToken');
+            sessionStorage.removeItem('impersonateRole');
+            sessionStorage.removeItem('isImpersonating');
+            if (!silent) toast.success('Impersonation ended');
+            setTimeout(() => window.close(), 500);
+            return;
+        }
+
         localStorage.removeItem('token');
         localStorage.removeItem('role');
         setToken(null);
@@ -31,7 +58,12 @@ export const AuthProvider = ({ children }) => {
             const profileData = await fetchProfile();
             setUser(profileData);
             setRole(profileData.role);
-            localStorage.setItem('role', profileData.role);
+            setRole(profileData.role);
+            if (sessionStorage.getItem('isImpersonating') === 'true') {
+                sessionStorage.setItem('impersonateRole', profileData.role);
+            } else {
+                localStorage.setItem('role', profileData.role);
+            }
         } catch (error) {
             console.error("Failed to load profile", error);
             if (error.response?.status === 401) {
@@ -129,6 +161,7 @@ export const AuthProvider = ({ children }) => {
             role,
             token,
             isAuthenticated,
+            isImpersonating,
             login,
             logout,
             register,
